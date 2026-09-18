@@ -1,0 +1,829 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#1f2733">
+  <title>英会話フレーズクイズ</title>
+  <style>
+    :root {
+      --bg: #edf1f5;
+      --card: #ffffff;
+      --ink: #1d2733;
+      --muted: #647181;
+      --navy: #1f2733;
+      --blue: #2868d8;
+      --blue-soft: #eff5ff;
+      --line: #dce3eb;
+      --ok: #147a52;
+      --ok-soft: #eaf8f1;
+      --ng: #bf3d42;
+      --ng-soft: #fff0f0;
+      --shadow: 0 10px 28px rgba(30, 46, 66, .08);
+    }
+
+    * { box-sizing: border-box; }
+
+    html { -webkit-text-size-adjust: 100%; }
+
+    body {
+      min-width: 320px;
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", "Noto Sans JP", sans-serif;
+      line-height: 1.65;
+    }
+
+    button { font: inherit; }
+
+    .wrap {
+      width: min(760px, calc(100% - 28px));
+      margin: 22px auto;
+      padding-bottom: calc(96px + env(safe-area-inset-bottom));
+    }
+
+    .hero {
+      padding: 26px 22px;
+      border-radius: 24px;
+      color: #fff;
+      background:
+        radial-gradient(circle at 88% 12%, rgba(89, 157, 255, .36), transparent 28%),
+        linear-gradient(135deg, #16202d, #2a3b52);
+      box-shadow: var(--shadow);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 3px 10px;
+      border: 1px solid rgba(255, 255, 255, .28);
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .04em;
+    }
+
+    h1 {
+      margin: 12px 0 6px;
+      font-size: clamp(28px, 7vw, 42px);
+      line-height: 1.2;
+      letter-spacing: -.03em;
+    }
+
+    .hero p { margin: 0; color: #dce7f4; font-size: 14px; }
+
+    .challenge-progress {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 18px;
+      color: #dce7f4;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .progress-track {
+      flex: 1;
+      height: 7px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .22);
+    }
+
+    .progress-bar {
+      width: 0;
+      height: 100%;
+      border-radius: inherit;
+      background: #7fb0ff;
+      transition: width .25s ease;
+    }
+
+    .question {
+      margin: 14px 0;
+      padding: 20px;
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      background: var(--card);
+      box-shadow: var(--shadow);
+    }
+
+    .qnum {
+      margin-bottom: 8px;
+      color: var(--blue);
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: .1em;
+    }
+
+    .question h2 {
+      margin: 0 0 16px;
+      font-size: clamp(18px, 5vw, 21px);
+      line-height: 1.55;
+      letter-spacing: -.015em;
+    }
+
+    .answers {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    .answer {
+      display: block;
+      width: 100%;
+      min-height: 64px;
+      padding: 12px 14px;
+      border: 1px solid #cfd8e2;
+      border-radius: 14px;
+      background: #fff;
+      color: var(--ink);
+      text-align: left;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      transition: transform .14s ease, border-color .14s ease, box-shadow .14s ease, background .14s ease;
+    }
+
+    .answer:active { transform: scale(.985); }
+
+    .answer:hover { border-color: #91b4f2; }
+
+    .answer:focus-visible {
+      outline: 3px solid rgba(40, 104, 216, .3);
+      outline-offset: 2px;
+    }
+
+    .answer.selected {
+      border-color: var(--blue);
+      background: var(--blue-soft);
+      box-shadow: 0 0 0 3px rgba(40, 104, 216, .13);
+    }
+
+    .answer.correct { border-color: var(--ok); background: var(--ok-soft); }
+    .answer.wrong { border-color: var(--ng); background: var(--ng-soft); }
+    .answer:disabled { cursor: default; }
+
+    .choice-row { display: flex; align-items: flex-start; gap: 10px; }
+
+    .choice-letter {
+      display: grid;
+      flex: 0 0 26px;
+      width: 26px;
+      height: 26px;
+      place-items: center;
+      border-radius: 50%;
+      background: #e8edf3;
+      color: #405163;
+      font-size: 12px;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .selected .choice-letter { background: var(--blue); color: #fff; }
+    .correct .choice-letter { background: var(--ok); color: #fff; }
+    .wrong .choice-letter { background: var(--ng); color: #fff; }
+
+    .phrase { display: block; font-size: 17px; font-weight: 850; line-height: 1.35; }
+    .reading { display: block; margin-top: 3px; color: var(--muted); font-size: 12px; font-weight: 700; line-height: 1.45; }
+
+    .explain {
+      display: none;
+      margin-top: 16px;
+      padding: 16px;
+      border: 1px solid #d6e4f6;
+      border-radius: 14px;
+      background: #f6faff;
+      color: #344353;
+      font-size: 14px;
+      line-height: 1.8;
+    }
+
+    .explain strong { display: block; margin-bottom: 8px; color: var(--ink); font-size: 16px; }
+    .explain p { margin: 7px 0; }
+    .explain-label { color: var(--blue); font-weight: 900; }
+
+    .result {
+      display: none;
+      margin: 22px 0 0;
+      padding: 24px 18px;
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      background: #fff;
+      box-shadow: var(--shadow);
+      text-align: center;
+    }
+
+    .result h2 { margin: 0 0 8px; font-size: 28px; line-height: 1.3; }
+    .result p { margin: 0 0 16px; color: var(--muted); }
+
+    .controls {
+      position: sticky;
+      bottom: max(12px, env(safe-area-inset-bottom));
+      z-index: 5;
+      display: block;
+      margin-top: 20px;
+      padding: 10px;
+      border: 1px solid rgba(202, 213, 224, .92);
+      border-radius: 18px;
+      background: rgba(245, 248, 251, .94);
+      box-shadow: 0 9px 25px rgba(30, 46, 66, .12);
+      backdrop-filter: blur(12px);
+    }
+
+    .btn {
+      min-height: 54px;
+      padding: 12px 18px;
+      border: 0;
+      border-radius: 13px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 900;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+
+    .btn:active { transform: scale(.985); }
+    .btn-primary { background: var(--blue); color: #fff; }
+    .btn-secondary { background: var(--navy); color: #fff; }
+    .btn-outline { border: 1px solid #c7d2de; background: #fff; color: #405163; }
+    .btn:disabled { opacity: .42; cursor: not-allowed; }
+    .note { margin: 17px 0 0; color: var(--muted); font-size: 12px; text-align: center; }
+
+    @media (min-width: 700px) {
+      .wrap { margin-top: 32px; }
+      .question { padding: 24px; }
+    }
+
+    @media (max-width: 460px) {
+      .wrap { width: min(100% - 20px, 760px); margin-top: 10px; }
+      .hero { padding: 22px 18px; border-radius: 20px; }
+      .question { padding: 18px 15px; border-radius: 17px; }
+      .question h2 { font-size: 18px; }
+      .phrase { font-size: 16px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="hero">
+      <span class="eyebrow">日常会話・初級</span>
+      <h1>英会話フレーズクイズ</h1>
+      <p>日常の場面に合う英文を選ぶ、10問連続正解チャレンジです。間違えたら第1問からやり直しです。</p>
+      <div class="challenge-progress" aria-live="polite">
+        <span id="progressText">第1問 / 10</span>
+        <span class="progress-track" aria-hidden="true"><span id="progressBar" class="progress-bar"></span></span>
+      </div>
+    </header>
+
+    <main id="quiz"></main>
+
+    <section id="result" class="result" aria-live="polite">
+      <h2 id="resultTitle"></h2>
+      <p id="resultText"></p>
+      <button id="actionBtn" class="btn btn-secondary" type="button" style="display:none"></button>
+    </section>
+
+    <div class="controls">
+      <button id="resetBtn" class="btn btn-outline" type="button">学習記録をリセット</button>
+    </div>
+
+    <p class="note">学習記録は、このブラウザ内に保存されます。</p>
+  </div>
+
+  <script>
+    const MINUTE = 60 * 1000;
+    const DAY = 24 * 60 * MINUTE;
+    const REVIEW_INTERVALS = [30 * MINUTE, DAY, 3 * DAY, 7 * DAY, 14 * DAY, 30 * DAY];
+    const MASTERY_STREAK = 4;
+    const STORAGE_KEY = "everyday-english-quiz-progress-v1";
+
+    function make(scene, answer, reading, meaning, words, tip) {
+      return { scene, answer, reading, meaning, words, tip };
+    }
+
+    const bank = [
+      make("初対面の人に「はじめまして」と言うとき。", "Nice to meet you.", "ナイス・トゥ・ミート・ユー", "はじめまして。お会いできてうれしいです。", "Nice（ナイス：良い） / to（トゥ：〜するために） / meet（ミート：会う） / you（ユー：あなた）", "初対面のあいさつです。別れ際には使いません。"),
+      make("久しぶりに会った友人に「元気だった？」と聞くとき。", "How have you been?", "ハウ・ハヴ・ユー・ビーン", "これまでどうしていましたか。元気だった？", "How（ハウ：どのように） / have（ハヴ：持っている・ここでは現在完了を作る） / you（ユー：あなた） / been（ビーン：いる・過ごしてきた）", "しばらく会っていなかった相手に使う、自然な近況確認です。"),
+      make("相手から「How are you?」と聞かれ、「元気です、ありがとう」と答えるとき。", "I'm good, thanks.", "アイム・グッド・サンクス", "元気です、ありがとう。", "I'm（アイム：I am＝私は〜です） / good（グッド：元気・良い） / thanks（サンクス：ありがとう）", "短く自然な返答です。丁寧にしたい場合は Thank you. でも構いません。"),
+      make("近いうちにまた会う相手へ「またあとで」と言うとき。", "See you later.", "シー・ユー・レイター", "またあとで会いましょう。", "See（シー：会う・見る） / you（ユー：あなた） / later（レイター：あとで）", "同じ日の少し後に会う予定があるときにも使えます。"),
+      make("別れ際に相手へ「よい一日を」と言うとき。", "Have a nice day.", "ハヴ・ア・ナイス・デイ", "よい一日を。", "Have（ハヴ：過ごす・持つ） / a（ア：1つの） / nice（ナイス：よい） / day（デイ：日）", "店員とお客さま、友人同士など幅広く使える明るい別れの表現です。"),
+      make("待ち合わせに遅れて「遅れてごめんなさい」と言うとき。", "Sorry I'm late.", "ソーリー・アイム・レイト", "遅れてごめんなさい。", "Sorry（ソーリー：ごめんなさい） / I'm（アイム：私は〜です） / late（レイト：遅れて）", "理由を長く説明する前に、まずこの一言を伝えると自然です。"),
+      make("相手に謝られ、「気にしないで」と返すとき。", "No problem.", "ノー・プロブレム", "問題ありません。気にしないで。", "No（ノー：ない） / problem（プロブレム：問題）", "軽い謝罪や依頼に対する、カジュアルで使いやすい返答です。"),
+      make("知らない人に声をかける前の「すみません」。", "Excuse me.", "エクスキューズ・ミー", "すみません。失礼します。", "Excuse（エクスキューズ：許す・失礼を許す） / me（ミー：私を）", "道を尋ねる、前を通る、注意を引くときに使います。謝罪そのものには Sorry が合います。"),
+      make("困っていて、相手に「手伝ってもらえますか」と頼むとき。", "Could you help me?", "クッド・ユー・ヘルプ・ミー", "手伝っていただけますか。", "Could（クッド：〜していただけますか） / you（ユー：あなた） / help（ヘルプ：助ける） / me（ミー：私を）", "Can you help me? より、少し丁寧でやわらかい頼み方です。"),
+      make("相手の説明が分からず、「分かりません」と言うとき。", "I don't understand.", "アイ・ドント・アンダースタンド", "私は理解できません。", "I（アイ：私） / don't（ドント：do not＝〜しない） / understand（アンダースタンド：理解する）", "聞き取れなかった・意味が分からなかった、どちらにも使えます。"),
+      make("聞き取れなかったので「もう一度言ってもらえますか」と頼むとき。", "Could you say that again?", "クッド・ユー・セイ・ザット・アゲイン", "それをもう一度言っていただけますか。", "Could（クッド：〜していただけますか） / you（ユー：あなた） / say（セイ：言う） / that（ザット：それ） / again（アゲイン：もう一度）", "聞き返すときの定番表現です。that は相手が今言った内容を指します。"),
+      make("相手の英語が速く、「もう少しゆっくり話してください」と言うとき。", "Please speak more slowly.", "プリーズ・スピーク・モア・スローリー", "もう少しゆっくり話してください。", "Please（プリーズ：お願いします） / speak（スピーク：話す） / more（モア：もっと） / slowly（スローリー：ゆっくり）", "more slowly で「よりゆっくり」です。会話の速度を下げてほしいときに使います。"),
+      make("知らない表現を聞いて、「それはどういう意味ですか」と聞くとき。", "What does that mean?", "ワット・ダズ・ザット・ミーン", "それは何を意味しますか。", "What（ワット：何） / does（ダズ：do の形） / that（ザット：それ） / mean（ミーン：意味する）", "単語・文章・相手の発言の意味を確認するときに便利です。"),
+      make("名前などを聞いて、「それはどうつづりますか」と聞くとき。", "How do you spell that?", "ハウ・ドゥ・ユー・スペル・ザット", "それはどうつづりますか。", "How（ハウ：どのように） / do（ドゥ：する） / you（ユー：あなた） / spell（スペル：つづる） / that（ザット：それ）", "名前、地名、メールアドレスなどのつづり確認に使えます。"),
+      make("すぐ答えずに「少し考えさせて」と言うとき。", "Let me think.", "レット・ミー・シンク", "少し考えさせて。", "Let（レット：〜させる） / me（ミー：私を） / think（シンク：考える）", "会話の間を自然につなげる短い表現です。"),
+      make("向かっている最中に「今そちらへ向かっています」と伝えるとき。", "I'm on my way.", "アイム・オン・マイ・ウェイ", "私は向かっている途中です。", "I'm（アイム：私は〜です） / on（オン：〜の上・ここでは途中で） / my（マイ：私の） / way（ウェイ：道）", "待ち合わせ相手への連絡で非常によく使います。"),
+      make("遅れそうで「少し遅れています」と伝えるとき。", "I'm running late.", "アイム・ランニング・レイト", "私は遅れています。", "I'm（アイム：私は〜です） / running（ランニング：進行している・ここでは時間が遅れている） / late（レイト：遅れて）", "Sorry I'm late. は到着後、I'm running late. は到着前の連絡に向きます。"),
+      make("待ち合わせ場所の近くで「もうすぐ着きます」と伝えるとき。", "I'm almost there.", "アイム・オールモスト・ゼア", "もうすぐそこに着きます。", "I'm（アイム：私は〜です） / almost（オールモスト：ほとんど） / there（ゼア：そこに）", "場所まであと少しのときに使う、短く自然な連絡です。"),
+      make("別れ際に「気をつけてね」と言うとき。", "Take care.", "テイク・ケア", "気をつけて。元気でね。", "Take（テイク：取る） / care（ケア：注意・世話）", "相手の健康や安全を気づかう、やさしい別れの表現です。"),
+      make("翌日に会う予定の相手へ「また明日」と言うとき。", "See you tomorrow.", "シー・ユー・トゥモロー", "また明日会いましょう。", "See（シー：会う） / you（ユー：あなた） / tomorrow（トゥモロー：明日）", "明日また会うことが分かっている相手に使います。"),
+      make("カフェで「コーヒーをお願いします」と注文するとき。", "I'd like a coffee, please.", "アイド・ライク・ア・コーヒー・プリーズ", "コーヒーをお願いします。", "I'd（アイド：I would＝私は〜したい） / like（ライク：欲しい） / a（ア：1つの） / coffee（コーヒー：コーヒー） / please（プリーズ：お願いします）", "I want よりも丁寧で、店での注文に自然な表現です。"),
+      make("レストランで「メニューをいただけますか」と頼むとき。", "Can I have the menu?", "キャン・アイ・ハヴ・ザ・メニュー", "メニューをいただけますか。", "Can（キャン：〜できますか） / I（アイ：私） / have（ハヴ：もらう） / the（ザ：その） / menu（メニュー：メニュー）", "注文や受け取りでは Can I have ...? が「〜をください」の意味でよく使われます。"),
+      make("店員に「おすすめは何ですか」と聞くとき。", "What do you recommend?", "ワット・ドゥ・ユー・レコメンド", "あなたは何をおすすめしますか。", "What（ワット：何） / do（ドゥ：する） / you（ユー：あなた） / recommend（レコメンド：おすすめする）", "メニュー、観光地、商品など、幅広く使える質問です。"),
+      make("メニューを指して「これにします」と注文するとき。", "I'll have this.", "アイル・ハヴ・ディス", "これをください。これにします。", "I'll（アイル：I will＝私は〜にします） / have（ハヴ：もらう・注文する） / this（ディス：これ）", "指差しと一緒に使うと、注文したい物を簡単に伝えられます。"),
+      make("食事後に「お会計をお願いします」と頼むとき。", "Could we get the bill, please?", "クッド・ウィー・ゲット・ザ・ビル・プリーズ", "お会計をいただけますか。", "Could（クッド：〜していただけますか） / we（ウィー：私たち） / get（ゲット：受け取る） / the（ザ：その） / bill（ビル：勘定書） / please（プリーズ：お願いします）", "bill は主に米語で会計・勘定書です。英国系の場では check も使われます。"),
+      make("料理が辛いかどうかを確認するとき。", "Is this spicy?", "イズ・ディス・スパイシー", "これは辛いですか。", "Is（イズ：〜ですか） / this（ディス：これ） / spicy（スパイシー：辛い）", "辛さが苦手な場合は、注文前に確認するときに便利です。"),
+      make("店で「ベジタリアン向けのものはありますか」と聞くとき。", "Do you have anything vegetarian?", "ドゥ・ユー・ハヴ・エニシング・ベジタリアン", "ベジタリアン向けのものはありますか。", "Do（ドゥ：〜しますか） / you（ユー：あなた） / have（ハヴ：ある） / anything（エニシング：何か） / vegetarian（ベジタリアン：菜食の）", "anything vegetarian で「菜食向けの何か」という意味になります。"),
+      make("店で食べ残しを持ち帰りたいとき。", "Can I get this to go?", "キャン・アイ・ゲット・ディス・トゥ・ゴー", "これを持ち帰りにできますか。", "Can（キャン：〜できますか） / I（アイ：私） / get（ゲット：もらう） / this（ディス：これ） / to（トゥ：〜するために） / go（ゴー：行く）", "to go は「持ち帰り用に」という意味です。米国でよく使われます。"),
+      make("料理を食べて「おいしいです」と伝えるとき。", "It's delicious.", "イッツ・デリシャス", "とてもおいしいです。", "It's（イッツ：It is＝それは〜です） / delicious（デリシャス：おいしい）", "店員や料理を作った人に、率直な褒め言葉として使えます。"),
+      make("食べ終わって「お腹いっぱいです」と言うとき。", "I'm full.", "アイム・フル", "私は満腹です。", "I'm（アイム：私は〜です） / full（フル：満杯・満腹の）", "これ以上食べられないほど満腹、という意味です。"),
+      make("店で値段を聞くとき。", "How much is this?", "ハウ・マッチ・イズ・ディス", "これはいくらですか。", "How（ハウ：どのくらい） / much（マッチ：量・値段） / is（イズ：〜です） / this（ディス：これ）", "商品を指して値段を尋ねる、基本的な買い物表現です。"),
+      make("服を買う前に「試着してもいいですか」と聞くとき。", "Can I try this on?", "キャン・アイ・トライ・ディス・オン", "これを試着してもいいですか。", "Can（キャン：〜できますか） / I（アイ：私） / try（トライ：試す） / this（ディス：これ） / on（オン：身につけて）", "try on は、服や靴を身につけて試すという決まった表現です。"),
+      make("店員に「これの、もう少し大きいサイズはありますか」と聞くとき。", "Do you have this in a larger size?", "ドゥ・ユー・ハヴ・ディス・イン・ア・ラージャー・サイズ", "これの、より大きいサイズはありますか。", "Do（ドゥ：〜しますか） / you（ユー：あなた） / have（ハヴ：ある） / this（ディス：これ） / in（イン：〜の状態で） / a（ア：1つの） / larger（ラージャー：より大きい） / size（サイズ：大きさ）", "in a larger size は「より大きいサイズで」という言い方です。"),
+      make("店員に声をかけられ、「見ているだけです」と答えるとき。", "I'm just looking.", "アイム・ジャスト・ルッキング", "見ているだけです。", "I'm（アイム：私は〜です） / just（ジャスト：ただ） / looking（ルッキング：見ている）", "買うと決めていないとき、店員へのやわらかい返答として使えます。"),
+      make("支払い前に「カードで払えますか」と聞くとき。", "Can I pay by card?", "キャン・アイ・ペイ・バイ・カード", "カードで支払えますか。", "Can（キャン：〜できますか） / I（アイ：私） / pay（ペイ：支払う） / by（バイ：〜で） / card（カード：カード）", "by card で「カードで」という支払い方法を表します。"),
+      make("購入後に「レシートをもらえますか」と頼むとき。", "Could I have a receipt?", "クッド・アイ・ハヴ・ア・レシート", "レシートをいただけますか。", "Could（クッド：〜いただけますか） / I（アイ：私） / have（ハヴ：もらう） / a（ア：1つの） / receipt（レシート：領収書・レシート）", "receipt は支払いの証明書です。経費精算などでも必要になる表現です。"),
+      make("施設内でトイレの場所を聞くとき。", "Where is the restroom?", "ウェア・イズ・ザ・レストルーム", "トイレはどこですか。", "Where（ウェア：どこ） / is（イズ：ある） / the（ザ：その） / restroom（レストルーム：トイレ）", "restroom は米国でよく使う、丁寧で無難な言い方です。"),
+      make("近くにコンビニがあるか聞くとき。", "Is there a convenience store nearby?", "イズ・ゼア・ア・コンビニエンス・ストア・ニアバイ", "近くにコンビニエンスストアはありますか。", "Is（イズ：ありますか） / there（ゼア：そこに） / a（ア：1つの） / convenience store（コンビニエンス・ストア：コンビニ） / nearby（ニアバイ：近くに）", "Is there ...? は、ある場所に何かが存在するかを聞く基本形です。"),
+      make("旅行先で「私たちの写真を撮っていただけますか」と頼むとき。", "Could you take a picture of us?", "クッド・ユー・テイク・ア・ピクチャー・オブ・アス", "私たちの写真を撮っていただけますか。", "Could（クッド：〜していただけますか） / you（ユー：あなた） / take（テイク：撮る） / a（ア：1枚の） / picture（ピクチャー：写真） / of（オブ：〜の） / us（アス：私たちを）", "of us で「私たちの」を表します。スマホを渡すときにも使えます。"),
+      make("店やホテルでWi-Fiがあるか聞くとき。", "Do you have Wi-Fi?", "ドゥ・ユー・ハヴ・ワイファイ", "Wi-Fiはありますか。", "Do（ドゥ：〜しますか） / you（ユー：あなた） / have（ハヴ：ある） / Wi-Fi（ワイファイ：無線通信）", "Do you have ...? は、店や施設に設備・サービスがあるか尋ねるときに使えます。"),
+      make("駅の場所を尋ねるとき。", "Where is the station?", "ウェア・イズ・ザ・ステーション", "駅はどこですか。", "Where（ウェア：どこ） / is（イズ：ある） / the（ザ：その） / station（ステーション：駅）", "目的地の単語を入れ替えるだけで、さまざまな場所を聞けます。"),
+      make("移動時間を聞くとき。", "How long does it take?", "ハウ・ロング・ダズ・イット・テイク", "どのくらい時間がかかりますか。", "How（ハウ：どのくらい） / long（ロング：長く） / does（ダズ：do の形） / it（イット：それ） / take（テイク：かかる）", "it は移動や作業を指します。目的地を続けて How long does it take to the station? とも言えます。"),
+      make("ホテル到着時に「チェックインしたいです」と伝えるとき。", "I'd like to check in.", "アイド・ライク・トゥ・チェック・イン", "チェックインをしたいです。", "I'd（アイド：I would＝私は〜したい） / like（ライク：したい） / to（トゥ：〜すること） / check in（チェック・イン：到着手続きをする）", "ホテルや空港などで使う、丁寧な意思表示です。"),
+      make("ホテルで予約していることを伝えるとき。", "I have a reservation.", "アイ・ハヴ・ア・リザベーション", "予約があります。", "I（アイ：私） / have（ハヴ：持っている） / a（ア：1つの） / reservation（リザベーション：予約）", "名前を続けて I have a reservation under Ikemoto. のようにも言えます。"),
+      make("ホテルで「朝食は何時ですか」と聞くとき。", "What time is breakfast?", "ワット・タイム・イズ・ブレックファスト", "朝食は何時ですか。", "What（ワット：何） / time（タイム：時刻） / is（イズ：〜です） / breakfast（ブレックファスト：朝食）", "開始と終了の両方を聞きたいなら What time is breakfast served? とも言えます。"),
+      make("ホテルで「タクシーを呼んでいただけますか」と頼むとき。", "Could you call a taxi?", "クッド・ユー・コール・ア・タクシー", "タクシーを呼んでいただけますか。", "Could（クッド：〜していただけますか） / you（ユー：あなた） / call（コール：呼ぶ） / a（ア：1台の） / taxi（タクシー：タクシー）", "call a taxi は「電話をする」ではなく「タクシーを手配する」という意味です。"),
+      make("電車に乗り遅れて「電車を逃しました」と言うとき。", "I missed my train.", "アイ・ミスト・マイ・トレイン", "私は電車に乗り遅れました。", "I（アイ：私） / missed（ミスト：逃した） / my（マイ：私の） / train（トレイン：電車）", "missed は miss の過去形です。予定や乗り物に間に合わなかったことを表します。"),
+      make("駅で「何番ホームですか」と聞くとき。", "Which platform is it?", "ウィッチ・プラットフォーム・イズ・イット", "どのホームですか。", "Which（ウィッチ：どの） / platform（プラットフォーム：ホーム） / is（イズ：〜です） / it（イット：それ）", "platform は電車に乗るホームを指します。案内板を見ながら使えます。"),
+      make("空席に「この席は空いていますか」と確認するとき。", "Is this seat taken?", "イズ・ディス・シート・テイケン", "この席は取られていますか。", "Is（イズ：〜ですか） / this（ディス：この） / seat（シート：席） / taken（テイケン：取られている）", "taken は「すでに誰かが使っている」という意味です。"),
+      make("飛行機や電車の予約で「窓側の席がほしいです」と頼むとき。", "I'd like a window seat.", "アイド・ライク・ア・ウィンドウ・シート", "窓側の席がほしいです。", "I'd（アイド：私は〜したい） / like（ライク：欲しい） / a（ア：1つの） / window（ウィンドウ：窓） / seat（シート：席）", "window seat は窓側、aisle seat は通路側の席です。"),
+      make("ホテルで「荷物をここに預けられますか」と聞くとき。", "Can I leave my luggage here?", "キャン・アイ・リーヴ・マイ・ラゲージ・ヒア", "荷物をここに置いておけますか。", "Can（キャン：〜できますか） / I（アイ：私） / leave（リーヴ：置いていく） / my（マイ：私の） / luggage（ラゲージ：荷物） / here（ヒア：ここに）", "check-in 前や check-out 後に荷物を預けたい場面で使えます。"),
+      make("乗り物で目的地への到着時刻を聞くとき。", "What time do we arrive?", "ワット・タイム・ドゥ・ウィー・アライブ", "私たちは何時に到着しますか。", "What（ワット：何） / time（タイム：時刻） / do（ドゥ：する） / we（ウィー：私たち） / arrive（アライブ：到着する）", "arrive は目的地に「到着する」という動詞です。"),
+      make("道案内で「地図で見せていただけますか」と頼むとき。", "Could you show me on the map?", "クッド・ユー・ショウ・ミー・オン・ザ・マップ", "地図で見せていただけますか。", "Could（クッド：〜していただけますか） / you（ユー：あなた） / show（ショウ：見せる） / me（ミー：私に） / on（オン：〜の上で） / the（ザ：その） / map（マップ：地図）", "口頭の説明が難しいときに、地図を示してもらう頼み方です。"),
+      make("道に迷って「迷っています」と伝えるとき。", "I'm lost.", "アイム・ロスト", "私は道に迷っています。", "I'm（アイム：私は〜です） / lost（ロスト：道に迷った・失われた）", "lost は物をなくした意味にもなりますが、I'm lost. なら「道に迷った」です。"),
+      make("目的地が歩いて行ける距離か聞くとき。", "Is it within walking distance?", "イズ・イット・ウィズイン・ウォーキング・ディスタンス", "それは歩いて行ける距離ですか。", "Is（イズ：〜ですか） / it（イット：それ） / within（ウィズイン：〜の範囲内） / walking（ウォーキング：歩くこと） / distance（ディスタンス：距離）", "歩いて行ける距離かを、丁寧に確認できる表現です。"),
+      make("切符売り場を探して「どこで切符を買えますか」と聞くとき。", "Where can I buy a ticket?", "ウェア・キャン・アイ・バイ・ア・チケット", "どこで切符を買えますか。", "Where（ウェア：どこで） / can（キャン：〜できる） / I（アイ：私） / buy（バイ：買う） / a（ア：1枚の） / ticket（チケット：切符）", "Where can I ...? は、何かをできる場所を尋ねる基本の形です。"),
+      make("窓口で「ロンドンまで切符を1枚お願いします」と言うとき。", "One ticket to London, please.", "ワン・チケット・トゥ・ロンドン・プリーズ", "ロンドンまで切符を1枚お願いします。", "One（ワン：1つ） / ticket（チケット：切符） / to（トゥ：〜へ） / London（ロンドン：ロンドン） / please（プリーズ：お願いします）", "行き先を London の部分に入れ替えるだけで使えます。"),
+      make("飛行機の座席で「通路側の席をいただけますか」と頼むとき。", "Could I have an aisle seat?", "クッド・アイ・ハヴ・アン・アイル・シート", "通路側の席をいただけますか。", "Could（クッド：〜いただけますか） / I（アイ：私） / have（ハヴ：もらう） / an（アン：1つの） / aisle（アイル：通路） / seat（シート：席）", "aisle seat は通路側の席です。発音はアイルに近い音です。"),
+      make("ホテル予約で「朝食は含まれていますか」と聞くとき。", "Is breakfast included?", "イズ・ブレックファスト・インクルーディッド", "朝食は含まれていますか。", "Is（イズ：〜ですか） / breakfast（ブレックファスト：朝食） / included（インクルーディッド：含まれている）", "料金・サービスに何が含まれるかを聞くときに使えます。"),
+      make("ホテルで「チェックアウトは何時ですか」と聞くとき。", "What time is check-out?", "ワット・タイム・イズ・チェックアウト", "チェックアウトは何時ですか。", "What（ワット：何） / time（タイム：時刻） / is（イズ：〜です） / check-out（チェックアウト：退室手続き）", "check-out はホテルを出るときの手続き・時刻を指します。"),
+      make("同僚に「少し話せますか」と声をかけるとき。", "Can we talk for a minute?", "キャン・ウィー・トーク・フォー・ア・ミニット", "少し話せますか。", "Can（キャン：〜できますか） / we（ウィー：私たち） / talk（トーク：話す） / for（フォー：〜の間） / a（ア：1つの） / minute（ミニット：分）", "for a minute は厳密に1分ではなく「少し」の意味でよく使います。"),
+      make("忙しそうな相手に「少しお時間ありますか」と聞くとき。", "Do you have a moment?", "ドゥ・ユー・ハヴ・ア・モーメント", "少しお時間ありますか。", "Do（ドゥ：〜しますか） / you（ユー：あなた） / have（ハヴ：ある） / a（ア：少しの） / moment（モーメント：瞬間・少しの時間）", "a moment は短い時間です。会話を始める前の丁寧な確認に使えます。"),
+      make("すぐ答えられず「確認して、また連絡します」と伝えるとき。", "I'll check and get back to you.", "アイル・チェック・アンド・ゲット・バック・トゥ・ユー", "確認して、あなたにまた連絡します。", "I'll（アイル：I will＝私は〜します） / check（チェック：確認する） / and（アンド：そして） / get back（ゲット・バック：返事をする） / to（トゥ：〜へ） / you（ユー：あなた）", "get back to you は、後で返事・連絡をするという定番の仕事表現です。"),
+      make("相手の提案に「それは良さそうですね」と返すとき。", "That sounds good.", "ザット・サウンズ・グッド", "それはよさそうです。", "That（ザット：それ） / sounds（サウンズ：聞こえる・思われる） / good（グッド：よい）", "提案内容を聞いて、前向きに賛成するときの自然な返答です。"),
+      make("相手の意見に「同意します」と伝えるとき。", "I agree.", "アイ・アグリー", "私は同意します。", "I（アイ：私） / agree（アグリー：同意する）", "強すぎない、分かりやすい賛成の表現です。"),
+      make("まだ判断できず「よく分かりません」と言うとき。", "I'm not sure.", "アイム・ノット・シュア", "私は確信がありません。", "I'm（アイム：私は〜です） / not（ノット：〜でない） / sure（シュア：確信している）", "I don't know. よりも、やわらかく「まだ確かではない」と伝えられます。"),
+      make("説明を受けて「説明していただけますか」と頼むとき。", "Could you explain that?", "クッド・ユー・エクスプレイン・ザット", "それを説明していただけますか。", "Could（クッド：〜していただけますか） / you（ユー：あなた） / explain（エクスプレイン：説明する） / that（ザット：それ）", "その内容をもう少し詳しく知りたいときに使います。"),
+      make("会議や作業中に「休憩しましょう」と提案するとき。", "Let's take a break.", "レッツ・テイク・ア・ブレイク", "休憩しましょう。", "Let's（レッツ：Let us＝私たちは〜しよう） / take（テイク：取る） / a（ア：1つの） / break（ブレイク：休憩）", "Let's は相手を含めて「〜しよう」と提案する表現です。"),
+      make("後でメールを送ることを伝えるとき。", "I'll send you an email.", "アイル・センド・ユー・アン・イーメール", "あなたにメールを送ります。", "I'll（アイル：私は〜します） / send（センド：送る） / you（ユー：あなたに） / an（アン：1通の） / email（イーメール：電子メール）", "you はここでは「あなたに」という受け手を表します。"),
+      make("助けてもらった相手に「手伝ってくれてありがとう」と言うとき。", "Thank you for your help.", "サンキュー・フォー・ユア・ヘルプ", "あなたの助けに感謝します。", "Thank（サンク：感謝する） / you（ユー：あなた） / for（フォー：〜に対して） / your（ユア：あなたの） / help（ヘルプ：助け）", "Thank you の後に for ... を続けると、何に感謝しているかを伝えられます。"),
+      make("相手の配慮に対して「本当に感謝しています」と言うとき。", "I appreciate it.", "アイ・アプリシエイト・イット", "私はそれに感謝しています。", "I（アイ：私） / appreciate（アプリシエイト：感謝する・価値を認める） / it（イット：それ）", "Thank you より少し丁寧に、相手の行為への感謝を示せます。"),
+      make("待っていた相手に「お待たせしてすみません」と言うとき。", "Sorry to keep you waiting.", "ソーリー・トゥ・キープ・ユー・ウェイティング", "お待たせしてすみません。", "Sorry（ソーリー：ごめんなさい） / to（トゥ：〜して） / keep（キープ：〜の状態にしておく） / you（ユー：あなたを） / waiting（ウェイティング：待っている）", "keep you waiting で「あなたを待たせ続ける」という意味です。"),
+      make("予定を変えたく「日程を変更できますか」と頼むとき。", "Could we reschedule?", "クッド・ウィー・リスケジュール", "日程を変更できますか。", "Could（クッド：〜できますか） / we（ウィー：私たち） / reschedule（リスケジュール：予定を組み直す）", "reschedule は、予定を別の日・別の時刻へ変更する動詞です。"),
+      make("日程調整で「何時なら都合がよいですか」と聞くとき。", "What time works for you?", "ワット・タイム・ワークス・フォー・ユー", "何時があなたに都合よいですか。", "What（ワット：何） / time（タイム：時刻） / works（ワークス：都合が合う） / for（フォー：〜にとって） / you（ユー：あなた）", "works は「仕事をする」以外に「都合が合う」という意味でも使えます。"),
+      make("約束について「3時にそこへ行きます」と伝えるとき。", "I'll be there at three.", "アイル・ビー・ゼア・アット・スリー", "3時にそこにいます。", "I'll（アイル：私は〜します） / be（ビー：いる） / there（ゼア：そこに） / at（アット：〜時に） / three（スリー：3）", "at three の数字を時刻に変えるだけで使えます。"),
+      make("同僚に「手を貸してくれますか」と頼むとき。", "Can you give me a hand?", "キャン・ユー・ギヴ・ミー・ア・ハンド", "手を貸してくれますか。", "Can（キャン：〜できますか） / you（ユー：あなた） / give（ギヴ：与える） / me（ミー：私に） / a（ア：1つの） / hand（ハンド：手・手助け）", "give me a hand は「手を1本ください」ではなく「手伝って」の決まった言い方です。"),
+      make("依頼を受け「私が対応します」と言うとき。", "I'll take care of it.", "アイル・テイク・ケア・オブ・イット", "私がそれに対応します。", "I'll（アイル：私は〜します） / take care of（テイク・ケア・オブ：世話をする・対応する） / it（イット：それ）", "問題や作業を引き受けるときに、安心感を与える表現です。"),
+      make("提案を聞き「それはいい考えです」と返すとき。", "That's a good idea.", "ザッツ・ア・グッド・アイディア", "それはよい考えです。", "That's（ザッツ：That is＝それは〜です） / a（ア：1つの） / good（グッド：よい） / idea（アイディア：考え）", "相手の案を具体的に褒めて賛成するときに使います。"),
+      make("相手に「分かったら知らせて」と伝えるとき。", "Let me know.", "レット・ミー・ノウ", "私に知らせて。", "Let（レット：〜させる） / me（ミー：私に） / know（ノウ：知らせる・知る）", "必要な情報が分かったときに連絡してほしい、という短い依頼です。"),
+      make("即答せず「考えておきます」と言うとき。", "I'll think about it.", "アイル・シンク・アバウト・イット", "それについて考えます。", "I'll（アイル：私は〜します） / think（シンク：考える） / about（アバウト：〜について） / it（イット：それ）", "すぐに約束せず、検討したいときの自然な表現です。"),
+      make("疲れていて「疲れています」と言うとき。", "I'm tired.", "アイム・タイアード", "私は疲れています。", "I'm（アイム：私は〜です） / tired（タイアード：疲れた）", "眠い・体力がないなど、日常的な疲れを伝える基本表現です。"),
+      make("食事をしたく「お腹がすきました」と言うとき。", "I'm hungry.", "アイム・ハングリー", "私はお腹がすいています。", "I'm（アイム：私は〜です） / hungry（ハングリー：空腹の）", "お腹がすいた状態を表します。hungry は空腹という形容詞です。"),
+      make("飲み物がほしく「のどが渇きました」と言うとき。", "I'm thirsty.", "アイム・サースティー", "私はのどが渇いています。", "I'm（アイム：私は〜です） / thirsty（サースティー：のどが渇いた）", "thirsty は水分を取りたい状態を表します。"),
+      make("体調について「頭が痛いです」と伝えるとき。", "I have a headache.", "アイ・ハヴ・ア・ヘデイク", "私は頭痛があります。", "I（アイ：私） / have（ハヴ：持っている） / a（ア：1つの） / headache（ヘデイク：頭痛）", "英語では痛みを I have a ... と「持っている」と表すことが多いです。"),
+      make("疲れたので「少し休む必要があります」と言うとき。", "I need some rest.", "アイ・ニード・サム・レスト", "私は少し休息が必要です。", "I（アイ：私） / need（ニード：必要とする） / some（サム：いくらかの） / rest（レスト：休息）", "some rest は「少しの休息」です。体調を気づかう会話で使えます。"),
+      make("楽しみにしている予定について「楽しみにしています」と言うとき。", "I'm looking forward to it.", "アイム・ルッキング・フォワード・トゥ・イット", "私はそれを楽しみにしています。", "I'm（アイム：私は〜です） / looking forward to（ルッキング・フォワード・トゥ：楽しみにしている） / it（イット：それ）", "look forward to は「楽しみにする」の決まった表現です。to の後ろは名詞か動名詞にします。"),
+      make("楽しい時間のあとに「とても楽しかったです」と言うとき。", "I had a great time.", "アイ・ハド・ア・グレイト・タイム", "私はとても楽しい時間を過ごしました。", "I（アイ：私） / had（ハド：have の過去形・過ごした） / a（ア：1つの） / great（グレイト：素晴らしい） / time（タイム：時間）", "had a great time は、イベントや食事が楽しかったと伝える自然な表現です。"),
+      make("会話の終わりに「お話しできてよかったです」と言うとき。", "It was nice talking to you.", "イット・ワズ・ナイス・トーキング・トゥ・ユー", "あなたと話せてよかったです。", "It（イット：それは） / was（ワズ：was＝〜でした） / nice（ナイス：よかった） / talking（トーキング：話すこと） / to（トゥ：〜と） / you（ユー：あなた）", "会話の終わりに、好意的に締める表現です。"),
+      make("悪い知らせを聞き、「それは残念です」と気づかうとき。", "I'm sorry to hear that.", "アイム・ソーリー・トゥ・ヒア・ザット", "それを聞いて残念です。", "I'm（アイム：私は〜です） / sorry（ソーリー：残念に思う） / to（トゥ：〜して） / hear（ヒア：聞く） / that（ザット：それ）", "相手のつらい話や残念な出来事に、共感を示す定番表現です。"),
+      make("相手の成功に「おめでとう」と言うとき。", "Congratulations!", "コングラチュレーションズ", "おめでとうございます。", "Congratulations（コングラチュレーションズ：祝福・おめでとう）", "合格、昇進、結婚など、相手の達成を祝うときに使います。"),
+      make("試験や挑戦の前に「がんばって」と言うとき。", "Good luck!", "グッド・ラック", "幸運を。がんばって。", "Good（グッド：よい） / luck（ラック：運）", "相手の成功を願う、短く明るい励ましです。"),
+      make("良い知らせを聞き、「それを聞けてうれしいです」と言うとき。", "I'm glad to hear that.", "アイム・グラッド・トゥ・ヒア・ザット", "それを聞けてうれしいです。", "I'm（アイム：私は〜です） / glad（グラッド：うれしい） / to（トゥ：〜して） / hear（ヒア：聞く） / that（ザット：それ）", "相手から良い近況を聞いたときに、共感して喜びを伝えられます。"),
+      make("相手の説明を聞き、「なるほど、分かります」と言うとき。", "That makes sense.", "ザット・メイクス・センス", "それは筋が通っています。納得です。", "That（ザット：それ） / makes（メイクス：作る） / sense（センス：意味・筋道）", "完全に賛成というより、説明に納得したことを伝える表現です。"),
+      make("驚いたときに「本当ですか」と聞き返すとき。", "Really?", "リアリー", "本当に？", "Really（リアリー：本当に）", "短い一語ですが、語調によって驚き・確認・関心を表せます。"),
+      make("体調や様子が気になる人に「大丈夫ですか」と聞くとき。", "Are you okay?", "アー・ユー・オーケー", "あなたは大丈夫ですか。", "Are（アー：〜ですか） / you（ユー：あなた） / okay（オーケー：大丈夫）", "転んだ人や元気のない人などに、相手を気づかうときに使います。"),
+      make("体調が悪く「具合がよくありません」と伝えるとき。", "I don't feel well.", "アイ・ドント・フィール・ウェル", "私は体調がよくありません。", "I（アイ：私） / don't（ドント：〜しない） / feel（フィール：感じる） / well（ウェル：よく）", "I feel sick. より広く、はっきり病名を言わずに不調を伝えられます。"),
+      make("相手へ「気をつけてください」と注意を促すとき。", "Please be careful.", "プリーズ・ビー・ケアフル", "気をつけてください。", "Please（プリーズ：お願いします） / be（ビー：〜である） / careful（ケアフル：注意深い）", "危ない場所・悪天候・帰り道などで、相手を気づかう表現です。"),
+      make("小さな問題に対し「気にしなくていいよ」と言うとき。", "It doesn't matter.", "イット・ダズント・マター", "それは重要ではありません。気にしません。", "It（イット：それ） / doesn't（ダズント：does not＝〜しない） / matter（マター：重要である）", "軽い失敗や違いについて「大したことではない」と伝えるときに使います。"),
+      make("相手の謝罪に「大丈夫ですよ」とやさしく返すとき。", "That's okay.", "ザッツ・オーケー", "それで大丈夫です。", "That's（ザッツ：That is＝それは〜です） / okay（オーケー：大丈夫）", "No problem. と近いですが、相手を安心させる柔らかい言い方です。"),
+      make("冗談だと伝えて「冗談です」と言うとき。", "I'm kidding.", "アイム・キディング", "私は冗談を言っています。", "I'm（アイム：私は〜です） / kidding（キディング：冗談を言っている）", "誤解されそうな冗談の直後に添えると、意図を分かりやすくできます。")
+    ];
+
+    // 誤答はすべて、正解文と同じ場面で迷いやすい近接した文法誤りに限定する。
+    const nearMisses = {
+      "Nice to meet you.": ["Nice meet you.", "Nice to meeting you.", "Nice to meet your."],
+      "How have you been?": ["How you have been?", "How have been you?", "What have you been?"],
+      "I'm good, thanks.": ["I good, thanks.", "I'm good, thank.", "I'm good, thanks you."],
+      "See you later.": ["See later you.", "See you lately.", "See you the later."],
+      "Have a nice day.": ["Have nice a day.", "Have a nicely day.", "Have a nice days."],
+      "Sorry I'm late.": ["Sorry I late.", "Sorry I'm lately.", "Sorry I am laten."],
+      "No problem.": ["No a problem.", "Not problem.", "No problems is."],
+      "Excuse me.": ["Excuse I.", "Excuse to me.", "Excusing me."],
+      "Could you help me?": ["Could you help I?", "Could you to help me?", "Could help you me?"],
+      "I don't understand.": ["I don't understands.", "I not understand.", "I doesn't understand."],
+      "Could you say that again?": ["Could you to say that again?", "Could say you that again?", "Could you say that agained?"],
+      "Please speak more slowly.": ["Please speak more slow.", "Please speak more slower.", "Please speaks more slowly."],
+      "What does that mean?": ["What does mean that?", "What do that mean?", "What does that means?"],
+      "How do you spell that?": ["How do spell you that?", "How does you spell that?", "How do you spelling that?"],
+      "Let me think.": ["Let I think.", "Let me to think.", "Let think me."],
+      "I'm on my way.": ["I'm in my way.", "I on my way.", "I'm on me way."],
+      "I'm running late.": ["I'm run late.", "I running late.", "I'm running lately."],
+      "I'm almost there.": ["I'm there almost.", "I'm almost arrive.", "I almost there."],
+      "Take care.": ["Take careful.", "Taking care.", "Take the care."],
+      "See you tomorrow.": ["See tomorrow you.", "See you at tomorrow.", "See you tomorrows."],
+      "I'd like a coffee, please.": ["I'd like coffee a, please.", "I'd like to a coffee, please.", "I'd like a coffee, pleasing."],
+      "Can I have the menu?": ["Can I has the menu?", "Can I to have the menu?", "Do I can have the menu?"],
+      "What do you recommend?": ["What you do recommend?", "What does you recommend?", "What do you recommends?"],
+      "I'll have this.": ["I'll to have this.", "I will have is this.", "I'll has this."],
+      "Could we get the bill, please?": ["Could we get bill the, please?", "Could we to get the bill, please?", "Could we gets the bill, please?"],
+      "Is this spicy?": ["Does this spicy?", "Is this spicily?", "Is this spice?"],
+      "Do you have anything vegetarian?": ["Do you have vegetarian anything?", "Does you have anything vegetarian?", "Do you have anything vegetarians?"],
+      "Can I get this to go?": ["Can I get this for go?", "Can I to get this to go?", "Do I can get this to go?"],
+      "It's delicious.": ["It's deliciously.", "It delicious.", "It's deliciouses."],
+      "I'm full.": ["I full.", "I'm fully.", "I am fullness."],
+      "How much is this?": ["How much this is?", "How many is this?", "How much does this?"],
+      "Can I try this on?": ["Can I try this in?", "Can I to try this on?", "Do I can try this on?"],
+      "Do you have this in a larger size?": ["Does you have this in a larger size?", "Do you have this at a larger size?", "Do you have this in larger size?"],
+      "I'm just looking.": ["I'm just look.", "I just looking.", "I'm just looked."],
+      "Can I pay by card?": ["Can I pay by a card?", "Do I can pay by card?", "Can I paying by card?"],
+      "Could I have a receipt?": ["Could I have receipt?", "Could I has a receipt?", "Could I to have a receipt?"],
+      "Where is the restroom?": ["Where the restroom is?", "Where is restroom the?", "Where does the restroom?"],
+      "Is there a convenience store nearby?": ["Is there convenience store nearby?", "Are there a convenience store nearby?", "Is there a convenience store near?"],
+      "Could you take a picture of us?": ["Could you take a picture from us?", "Could you take a picture of we?", "Could you to take a picture of us?"],
+      "Do you have Wi-Fi?": ["Do you has Wi-Fi?", "Does you have Wi-Fi?", "Are you have Wi-Fi?"],
+      "Where is the station?": ["Where the station is?", "Where is station the?", "Where does the station?"],
+      "How long does it take?": ["How long it does take?", "How long does take it?", "How long do it take?"],
+      "I'd like to check in.": ["I'd like to check on.", "I'd like to checked in.", "I like to check in."],
+      "I have a reservation.": ["I have an reservation.", "I has a reservation.", "I have a reserve."],
+      "What time is breakfast?": ["What time breakfast is?", "What time does breakfast?", "When time is breakfast?"],
+      "Could you call a taxi?": ["Could you call to a taxi?", "Could you to call a taxi?", "Could call you a taxi?"],
+      "I missed my train.": ["I miss my train.", "I missed my trains.", "I have miss my train."],
+      "Which platform is it?": ["Which platform it is?", "Which platform are it?", "Which is platform it?"],
+      "Is this seat taken?": ["Does this seat taken?", "Is this seat take?", "Is this a seat taken?"],
+      "I'd like a window seat.": ["I'd like a seat window.", "I'd like an window seat.", "I would like window a seat."],
+      "Can I leave my luggage here?": ["Can I leave here my luggage?", "Can I to leave my luggage here?", "Can I leave my luggages here?"],
+      "What time do we arrive?": ["What time we arrive?", "What time do arrive we?", "What time does we arrive?"],
+      "Could you show me on the map?": ["Could you show on the map me?", "Could you to show me on the map?", "Could you show me in the map?"],
+      "I'm lost.": ["I'm lose.", "I lost.", "I am losted."],
+      "Is it within walking distance?": ["Is it within walk distance?", "Does it within walking distance?", "Is it within walking distances?"],
+      "Where can I buy a ticket?": ["Where can buy I a ticket?", "Where do I can buy a ticket?", "Where can I buying a ticket?"],
+      "One ticket to London, please.": ["One ticket at London, please.", "One ticket to the London, please.", "One ticket London to, please."],
+      "Could I have an aisle seat?": ["Could I have a aisle seat?", "Could I has an aisle seat?", "Could I to have an aisle seat?"],
+      "Is breakfast included?": ["Does breakfast included?", "Is breakfast include?", "Are breakfast included?"],
+      "What time is check-out?": ["What time check-out is?", "What time does check-out?", "When time is check-out?"],
+      "Can we talk for a minute?": ["Can talk we for a minute?", "Can we to talk for a minute?", "Do we can talk for a minute?"],
+      "Do you have a moment?": ["Do you have moment?", "Does you have a moment?", "Do you has a moment?"],
+      "I'll check and get back to you.": ["I'll check and get back you.", "I'll checking and get back to you.", "I will check and gets back to you."],
+      "That sounds good.": ["That sound good.", "That sounds well.", "That is sounds good."],
+      "I agree.": ["I am agree.", "I agrees.", "I agreeing."],
+      "I'm not sure.": ["I'm don't sure.", "I not sure.", "I'm no sure."],
+      "Could you explain that?": ["Could you explain to that?", "Could you to explain that?", "Could explain you that?"],
+      "Let's take a break.": ["Let's taking a break.", "Let's to take a break.", "Let's take break a."],
+      "I'll send you an email.": ["I'll send an email you.", "I'll sending you an email.", "I will sends you an email."],
+      "Thank you for your help.": ["Thank you for help your.", "Thank you to your help.", "Thanks you for your help."],
+      "I appreciate it.": ["I appreciate to it.", "I am appreciate it.", "I appreciates it."],
+      "Sorry to keep you waiting.": ["Sorry to keep waiting you.", "Sorry to kept you waiting.", "Sorry keep you waiting."],
+      "Could we reschedule?": ["Could we to reschedule?", "Can we rescheduling?", "Do we could reschedule?"],
+      "What time works for you?": ["What time work for you?", "What time does works for you?", "Which time works to you?"],
+      "I'll be there at three.": ["I'll there be at three.", "I will be there in three.", "I'll be there on three."],
+      "Can you give me a hand?": ["Can you give a hand me?", "Could you give me hand?", "Do you can give me a hand?"],
+      "I'll take care of it.": ["I'll take care it.", "I will taking care of it.", "I'll take care for it."],
+      "That's a good idea.": ["That's good a idea.", "That a good idea is.", "That's an good idea."],
+      "Let me know.": ["Let me knows.", "Let I know.", "Lets me know."],
+      "I'll think about it.": ["I'll think it about.", "I will thinking about it.", "I'll think about."],
+      "I'm tired.": ["I tired.", "I'm tiring.", "I am tiredly."],
+      "I'm hungry.": ["I hungry.", "I'm hunger.", "I am hungrily."],
+      "I'm thirsty.": ["I thirsty.", "I'm thirst.", "I am thirstily."],
+      "I have a headache.": ["I have headache a.", "I'm have a headache.", "I has a headache."],
+      "I need some rest.": ["I need rest some.", "I need a some rest.", "I'm need some rest."],
+      "I'm looking forward to it.": ["I'm look forward to it.", "I'm looking forward it.", "I looking forward to it."],
+      "I had a great time.": ["I have a great time.", "I had great a time.", "I had a greatly time."],
+      "It was nice talking to you.": ["It nice was talking to you.", "It was nicely talking to you.", "It was nice talked to you."],
+      "I'm sorry to hear that.": ["I'm sorry hear that.", "I sorry to hear that.", "I'm sorry to heard that."],
+      "Congratulations!": ["Congratulation!", "Congratulations are!", "Congratulate!"],
+      "Good luck!": ["Good lucky!", "Well luck!", "Good lucks!"],
+      "I'm glad to hear that.": ["I'm glad hear that.", "I glad to hear that.", "I'm gladly to hear that."],
+      "That makes sense.": ["That make sense.", "That makes a sense.", "That is make sense."],
+      "Really?": ["Real?", "Really is?", "Do really?"],
+      "Are you okay?": ["Is you okay?", "Do you okay?", "Are you okays?"],
+      "I don't feel well.": ["I not feel well.", "I doesn't feel well.", "I'm don't feel well."],
+      "Please be careful.": ["Please be carefully.", "Please are careful.", "Please to be careful."],
+      "It doesn't matter.": ["It doesn't matters.", "It don't matter.", "It isn't matter."],
+      "That's okay.": ["That's be okay.", "That okay is.", "That's okayly."],
+      "I'm kidding.": ["I'm kiddingly.", "I kidding.", "I'm kid."]
+    };
+
+    // 選択肢の発音表記。正解以外の「近接した誤答」にも必ず表示する。
+    const pronunciationDictionary = {
+      "a": "ア", "about": "アバウト", "again": "アゲイン", "agained": "アゲインド",
+      "agree": "アグリー", "agreeing": "アグリーイング", "agrees": "アグリーズ", "aisle": "アイル",
+      "almost": "オールモスト", "am": "アム", "an": "アン", "and": "アンド", "anything": "エニシング",
+      "appreciate": "アプリシエイト", "appreciates": "アプリシエイツ", "are": "アー", "arrive": "アライブ",
+      "at": "アット", "back": "バック", "be": "ビー", "been": "ビーン", "bill": "ビル", "break": "ブレイク",
+      "breakfast": "ブレックファスト", "buy": "バイ", "buying": "バイイング", "by": "バイ", "call": "コール",
+      "can": "キャン", "card": "カード", "care": "ケア", "careful": "ケアフル", "carefully": "ケアフリー",
+      "check": "チェック", "checked": "チェックト", "checking": "チェッキング", "coffee": "コーヒー",
+      "congratulate": "コングラチュレイト", "congratulation": "コングラチュレーション", "congratulations": "コングラチュレーションズ",
+      "convenience": "コンビニエンス", "could": "クッド", "day": "デイ", "days": "デイズ",
+      "delicious": "デリシャス", "deliciouses": "デリシャスィズ", "deliciously": "デリシャスリー",
+      "distance": "ディスタンス", "distances": "ディスタンシズ", "do": "ドゥ", "does": "ダズ",
+      "doesn't": "ダズント", "don't": "ドント", "email": "イーメール", "excuse": "エクスキューズ",
+      "excusing": "エクスキューズィング", "explain": "エクスプレイン", "feel": "フィール", "fi": "ファイ",
+      "for": "フォー", "forward": "フォワード", "from": "フロム", "full": "フル", "fullness": "フルネス",
+      "fully": "フーリー", "get": "ゲット", "gets": "ゲッツ", "give": "ギヴ", "glad": "グラッド",
+      "gladly": "グラッドリー", "go": "ゴー", "good": "グッド", "great": "グレイト", "greatly": "グレイトリー",
+      "had": "ハド", "hand": "ハンド", "has": "ハズ", "have": "ハヴ", "headache": "ヘデイク", "hear": "ヒア",
+      "heard": "ハード", "help": "ヘルプ", "here": "ヒア", "how": "ハウ", "hunger": "ハンガー",
+      "hungrily": "ハングリリー", "hungry": "ハングリー", "i": "アイ", "i'd": "アイド", "i'll": "アイル",
+      "i'm": "アイム", "idea": "アイディア", "in": "イン", "include": "インクルード", "included": "インクルーディッド",
+      "is": "イズ", "isn't": "イズント", "it": "イット", "it's": "イッツ", "just": "ジャスト", "keep": "キープ",
+      "kept": "ケプト", "kid": "キッド", "kidding": "キディング", "kiddingly": "キディングリー", "know": "ノウ",
+      "knows": "ノウズ", "larger": "ラージャー", "late": "レイト", "lately": "レイトリー", "laten": "レイトン",
+      "later": "レイター", "leave": "リーヴ", "let": "レット", "let's": "レッツ", "lets": "レッツ",
+      "like": "ライク", "london": "ロンドン", "long": "ロング", "look": "ルック", "looked": "ルックト",
+      "looking": "ルッキング", "lose": "ルーズ", "lost": "ロスト", "losted": "ロステッド", "luck": "ラック",
+      "lucks": "ラックス", "lucky": "ラッキー", "luggage": "ラゲージ", "luggages": "ラゲージズ", "make": "メイク",
+      "makes": "メイクス", "many": "メニー", "map": "マップ", "matter": "マター", "matters": "マターズ",
+      "me": "ミー", "mean": "ミーン", "means": "ミーンズ", "meet": "ミート", "meeting": "ミーティング",
+      "menu": "メニュー", "minute": "ミニット", "miss": "ミス", "missed": "ミスト", "moment": "モーメント",
+      "more": "モア", "much": "マッチ", "my": "マイ", "near": "ニア", "nearby": "ニアバイ", "need": "ニード",
+      "nice": "ナイス", "nicely": "ナイスリー", "no": "ノー", "not": "ノット", "of": "オブ", "okay": "オーケー",
+      "okayly": "オーケーリー", "okays": "オーケーズ", "on": "オン", "one": "ワン", "out": "アウト", "pay": "ペイ",
+      "paying": "ペイイング", "picture": "ピクチャー", "platform": "プラットフォーム", "please": "プリーズ",
+      "pleasing": "プリージング", "problem": "プロブレム", "problems": "プロブレムズ", "real": "リアル",
+      "really": "リアリー", "receipt": "レシート", "recommend": "レコメンド", "recommends": "レコメンズ",
+      "reschedule": "リスケジュール", "rescheduling": "リスケジューリング", "reservation": "リザベーション",
+      "reserve": "リザーブ", "rest": "レスト", "restroom": "レストルーム", "run": "ラン", "running": "ランニング",
+      "say": "セイ", "seat": "シート", "see": "シー", "send": "センド", "sending": "センディング",
+      "sends": "センズ", "sense": "センス", "show": "ショウ", "size": "サイズ", "slow": "スロー",
+      "slower": "スローワー", "slowly": "スローリー", "some": "サム", "sorry": "ソーリー", "sound": "サウンド",
+      "sounds": "サウンズ", "speak": "スピーク", "speaks": "スピークス", "spell": "スペル", "spelling": "スペリング",
+      "spice": "スパイス", "spicily": "スパイシリー", "spicy": "スパイシー", "station": "ステーション",
+      "store": "ストア", "sure": "シュア", "take": "テイク", "taken": "テイケン", "taking": "テイキング",
+      "talk": "トーク", "talked": "トークト", "talking": "トーキング", "taxi": "タクシー", "thank": "サンク",
+      "thanks": "サンクス", "that": "ザット", "that's": "ザッツ", "the": "ザ", "there": "ゼア",
+      "think": "シンク", "thinking": "シンキング", "thirst": "サースト", "thirstily": "サースティリー",
+      "thirsty": "サースティー", "this": "ディス", "three": "スリー", "ticket": "チケット", "time": "タイム",
+      "tired": "タイアード", "tiredly": "タイアードリー", "tiring": "タイアリング", "to": "トゥ",
+      "tomorrow": "トゥモロー", "tomorrows": "トゥモローズ", "train": "トレイン", "trains": "トレインズ",
+      "try": "トライ", "understand": "アンダースタンド", "understands": "アンダースタンズ", "us": "アス",
+      "vegetarian": "ベジタリアン", "vegetarians": "ベジタリアンズ", "waiting": "ウェイティング",
+      "walk": "ウォーク", "walking": "ウォーキング", "was": "ワズ", "way": "ウェイ", "we": "ウィー",
+      "well": "ウェル", "what": "ワット", "when": "ウェン", "where": "ウェア", "which": "ウィッチ",
+      "wi": "ワイ", "will": "ウィル", "window": "ウィンドウ", "within": "ウィズイン", "work": "ワーク",
+      "works": "ワークス", "would": "ウッド", "you": "ユー", "your": "ユア"
+    };
+
+    let round = 1;
+    let current = [];
+    let questionPosition = 0;
+    let locked = false;
+    let progress = loadProgress();
+
+    function blankRecord() {
+      return { seen: 0, correct: 0, wrong: 0, streak: 0, mastered: false, nextDue: 0, lastAnswered: 0 };
+    }
+
+    function loadProgress() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+        return saved && typeof saved === "object" ? saved : {};
+      } catch (error) {
+        return {};
+      }
+    }
+
+    function saveProgress() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
+      } catch (error) {
+        return;
+      }
+    }
+
+    function recordFor(index) {
+      if (!progress[index]) progress[index] = blankRecord();
+      return progress[index];
+    }
+
+    function shuffled(values) {
+      const result = [...values];
+      for (let i = result.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [result[i], result[j]] = [result[j], result[i]];
+      }
+      return result;
+    }
+
+    function compareReviews(left, right) {
+      const leftPriority = left.record.streak === 0 ? 0 : 1;
+      const rightPriority = right.record.streak === 0 ? 0 : 1;
+      return leftPriority - rightPriority || left.record.nextDue - right.record.nextDue || left.record.lastAnswered - right.record.lastAnswered;
+    }
+
+    function choicesFor(item) {
+      const wrong = nearMisses[item.answer];
+      if (!wrong || wrong.length !== 3) throw new Error("選択肢データが不足しています。");
+      const all = shuffled([{ text: item.answer, correct: true }, ...wrong.map(text => ({ text }))]);
+      return all.map(choice => ({ ...choice, correct: Boolean(choice.correct) }));
+    }
+
+    function pronunciationFor(text, item) {
+      if (text === item.answer) return item.reading;
+      const words = text.match(/[A-Za-z]+(?:'[A-Za-z]+)?/g) || [];
+      const missing = words.find(word => !pronunciationDictionary[word.toLowerCase()]);
+      if (missing) throw new Error("発音データが不足しています：" + missing);
+      return words.map(word => pronunciationDictionary[word.toLowerCase()]).join("・");
+    }
+
+    function pickTen() {
+      const now = Date.now();
+      const entries = bank.map((item, index) => ({ item, index, record: recordFor(index) }));
+      const due = entries
+        .filter(entry => entry.record.seen && entry.record.nextDue <= now)
+        .sort(compareReviews);
+      const unseen = shuffled(entries.filter(entry => !entry.record.seen));
+      const scheduled = entries
+        .filter(entry => entry.record.seen && entry.record.nextDue > now && !entry.record.mastered)
+        .sort((left, right) => left.record.nextDue - right.record.nextDue);
+      const mastered = entries
+        .filter(entry => entry.record.seen && entry.record.nextDue > now && entry.record.mastered)
+        .sort((left, right) => left.record.nextDue - right.record.nextDue);
+
+      const selectedEntries = [];
+      [due, unseen, scheduled, mastered].forEach(group => {
+        group.forEach(entry => {
+          if (selectedEntries.length < 10 && !selectedEntries.some(chosen => chosen.index === entry.index)) {
+            selectedEntries.push({ ...entry, choices: choicesFor(entry.item) });
+          }
+        });
+      });
+      current = selectedEntries;
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function updateProgress() {
+      const completed = Math.min(questionPosition, 10);
+      document.getElementById("progressText").textContent = `第${Math.min(questionPosition + 1, 10)}問 / 10`;
+      document.getElementById("progressBar").style.width = `${completed * 10}%`;
+    }
+
+    function render() {
+      const quiz = document.getElementById("quiz");
+      quiz.innerHTML = "";
+
+      const entry = current[questionPosition];
+      if (!entry) return;
+      const answers = entry.choices.map((choice, answerIndex) => `
+        <button class="answer" type="button" data-a="${answerIndex}">
+          <span class="choice-row">
+            <span class="choice-letter">${String.fromCharCode(65 + answerIndex)}</span>
+            <span>
+              <span class="phrase">${escapeHtml(choice.text)}</span>
+              <span class="reading">発音：${escapeHtml(pronunciationFor(choice.text, entry.item))}</span>
+            </span>
+          </span>
+        </button>
+      `).join("");
+
+      const section = document.createElement("section");
+      section.className = "question";
+      section.innerHTML = `
+        <div class="qnum">QUESTION ${questionPosition + 1}</div>
+        <h2>${escapeHtml(entry.item.scene)}<br>最も自然な英文は？</h2>
+        <div class="answers">${answers}</div>
+        <div class="explain" id="explain">
+          <strong>正解：${escapeHtml(entry.item.answer)}</strong>
+          <p><span class="explain-label">読み方：</span>${escapeHtml(entry.item.reading)}</p>
+          <p><span class="explain-label">意味：</span>${escapeHtml(entry.item.meaning)}</p>
+          <p><span class="explain-label">語句：</span>${escapeHtml(entry.item.words)}</p>
+          <p><span class="explain-label">使い方：</span>${escapeHtml(entry.item.tip)}</p>
+          <p><span class="explain-label">見比べる点：</span>ほかの選択肢は、同じ意味を伝えようとしているものの、語順・助動詞・動詞の形・前置詞・冠詞のいずれかが不自然です。正解文と1語ずつ比べて確認しましょう。</p>
+        </div>
+      `;
+      quiz.appendChild(section);
+      updateProgress();
+
+      document.querySelectorAll(".answer").forEach(button => {
+        button.addEventListener("click", () => answerQuestion(Number(button.dataset.a)));
+      });
+    }
+
+    function updateRecord(entry, isCorrect) {
+      const record = recordFor(entry.index);
+      record.seen++;
+      record.lastAnswered = Date.now();
+      if (isCorrect) {
+        record.correct++;
+        record.streak++;
+        record.mastered = record.streak >= MASTERY_STREAK;
+        const intervalIndex = Math.min(record.streak - 1, REVIEW_INTERVALS.length - 1);
+        record.nextDue = Date.now() + REVIEW_INTERVALS[intervalIndex];
+      } else {
+        record.wrong++;
+        record.streak = 0;
+        record.mastered = false;
+        record.nextDue = Date.now() + 10 * MINUTE;
+      }
+      saveProgress();
+    }
+
+    function showFeedback(isCorrect) {
+      const result = document.getElementById("result");
+      const actionBtn = document.getElementById("actionBtn");
+      const isLastQuestion = questionPosition === current.length - 1;
+      result.style.display = "block";
+      actionBtn.style.display = "inline-flex";
+
+      if (!isCorrect) {
+        document.getElementById("resultTitle").textContent = "不正解。第1問からやり直しです";
+        document.getElementById("resultText").textContent = "正解と解説を確認してから、同じ10問にもう一度挑戦しましょう。";
+        actionBtn.textContent = "第1問からやり直す";
+        actionBtn.onclick = restartChallenge;
+      } else if (isLastQuestion) {
+        document.getElementById("resultTitle").textContent = "10問連続正解！クリアです";
+        document.getElementById("resultText").textContent = "すべての答えを正しく選べました。次は別の10問に挑戦できます。";
+        document.getElementById("progressText").textContent = "10問 / 10 クリア";
+        document.getElementById("progressBar").style.width = "100%";
+        actionBtn.textContent = "別の10問に挑戦する";
+        actionBtn.onclick = () => {
+          round++;
+          startNewChallenge();
+        };
+      } else {
+        document.getElementById("resultTitle").textContent = "正解！";
+        document.getElementById("resultText").textContent = `第${questionPosition + 1}問を突破しました。解説を確認して次へ進みましょう。`;
+        actionBtn.textContent = "次の問題へ";
+        actionBtn.onclick = () => {
+          questionPosition++;
+          locked = false;
+          hideFeedback();
+          render();
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        };
+      }
+      result.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+
+    function answerQuestion(answerIndex) {
+      if (locked) return;
+      const entry = current[questionPosition];
+      const correctIndex = entry.choices.findIndex(choice => choice.correct);
+      const isCorrect = answerIndex === correctIndex;
+      locked = true;
+      updateRecord(entry, isCorrect);
+
+      document.querySelectorAll(".answer").forEach((button, index) => {
+        button.disabled = true;
+        if (index === correctIndex) button.classList.add("correct");
+        if (index === answerIndex && !isCorrect) button.classList.add("wrong");
+      });
+      document.getElementById("explain").style.display = "block";
+      showFeedback(isCorrect);
+    }
+
+    function hideFeedback() {
+      document.getElementById("result").style.display = "none";
+      const actionBtn = document.getElementById("actionBtn");
+      actionBtn.style.display = "none";
+      actionBtn.onclick = null;
+    }
+
+    function restartChallenge() {
+      questionPosition = 0;
+      locked = false;
+      hideFeedback();
+      render();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function startNewChallenge() {
+      questionPosition = 0;
+      locked = false;
+      pickTen();
+      hideFeedback();
+      render();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    document.getElementById("resetBtn").addEventListener("click", () => {
+      if (!window.confirm("学習記録をすべて消去して、最初から始めますか？")) return;
+      progress = {};
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+      } catch (error) {
+        // ブラウザの保存機能が使えない場合も、この画面内では初期状態に戻せます。
+      }
+      round = 1;
+      startNewChallenge();
+    });
+
+    startNewChallenge();
+  </script>
+</body>
+</html>
