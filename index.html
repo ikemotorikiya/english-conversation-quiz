@@ -270,9 +270,9 @@
     <header class="hero">
       <span class="eyebrow">日常会話・初級</span>
       <h1>英会話フレーズクイズ</h1>
-      <p>日常の場面に合う英文を選ぶ、10問連続正解チャレンジです。間違えたら第1問からやり直しです。</p>
+      <p>日常の場面に合う英文を選びます。正解した問題はクリア済みになり、不正解の問題は8問以上あとに再出題されます。</p>
       <div class="challenge-progress" aria-live="polite">
-        <span id="progressText">第1問 / 10</span>
+        <span id="progressText">クリア 0 / 100</span>
         <span class="progress-track" aria-hidden="true"><span id="progressBar" class="progress-bar"></span></span>
       </div>
     </header>
@@ -293,18 +293,99 @@
   </div>
 
   <script>
-    const MINUTE = 60 * 1000;
-    const DAY = 24 * 60 * MINUTE;
-    const REVIEW_INTERVALS = [30 * MINUTE, DAY, 3 * DAY, 7 * DAY, 14 * DAY, 30 * DAY];
-    const MASTERY_STREAK = 4;
-    const STORAGE_KEY = "everyday-english-quiz-progress-v1";
+    const REVIEW_GAP = 8;
+    const STORAGE_KEY = "everyday-english-quiz-progress-v2";
 
     function make(scene, answer, reading, meaning, words, tip) {
-      return { scene, answer, reading, meaning, words, tip };
+      return { scene, answer, reading, meaning, words, tip, grammar: grammarFor(answer) };
+    }
+
+    function grammarFor(answer) {
+      const exact = {
+        "Nice to meet you.": "nice + to + 動詞の原形で「〜できてうれしい」。to の後ろは meet のように動詞の原形にします。",
+        "How have you been?": "How + have + 主語 + been? は現在完了の形です。過去から今までの近況をたずねます。",
+        "I'm good, thanks.": "I’m は I am の短縮形です。be動詞の後ろに good のような形容詞を置いて状態を伝えます。",
+        "See you later.": "See you + 時を表す語で「また〜に会おう」。くだけた会話では I’ll を省いた定番の別れの表現です。",
+        "Have a nice day.": "Have + a + 名詞で、相手への願いを伝えます。命令ではなく「よい一日を」というあいさつです。",
+        "Sorry I'm late.": "Sorry の後ろに、遅れた事実を I’m late と続けています。I’m は I am の短縮形です。",
+        "No problem.": "No + 名詞で「問題なし」。短い決まり文句なので、主語や動詞は入れません。",
+        "Excuse me.": "Excuse me はまとまりで覚える決まり文句です。人の注意を引く「すみません」に使います。",
+        "I don't understand.": "一般動詞 understand の否定は do not + 動詞の原形です。don’t は do not の短縮形です。",
+        "What does that mean?": "疑問文では does + 主語 + 動詞の原形になります。does の後ろを means にはしません。",
+        "How do you spell that?": "How + do + 主語 + 動詞の原形で方法を聞きます。spell は動詞の原形です。",
+        "Let me think.": "Let + 人 + 動詞の原形で「人に〜させて」。Let me think は「少し考えさせて」です。",
+        "I'm on my way.": "be on one’s way は「〜へ向かっている途中」という決まった言い方です。",
+        "I'm running late.": "be running late で「予定より遅れそう・遅れている」。run を「走る」と直訳しない表現です。",
+        "I'm almost there.": "be almost there で「目的地まであと少し」。there は目的地を指します。",
+        "Take care.": "Take care はまとまりで「気をつけて」。careful などに変えず、この形で使います。",
+        "See you tomorrow.": "See you + tomorrow で「また明日」。tomorrow の前には通常 at を付けません。",
+        "What do you recommend?": "What + do + 主語 + 動詞の原形で「何をおすすめしますか」。recommend は原形です。",
+        "I'll have this.": "I’ll have + 名詞／指す物で、注文するときの「〜にします」。I’ll は I will の短縮形です。",
+        "Is this spicy?": "be動詞の疑問文は Is + 主語 + 形容詞? の語順です。spicy は「辛い」という形容詞です。",
+        "It's delicious.": "It’s は It is の短縮形。be動詞の後ろに delicious のような形容詞を置きます。",
+        "I'm full.": "I’m + 形容詞で状態を表します。full はここでは「満腹の」です。",
+        "How much is this?": "How much + be動詞 + 主語? で値段をたずねます。much は数ではなく値段・量に使います。",
+        "I'm just looking.": "I’m + 動詞ing で「今〜している」。just looking は店での「見ているだけ」の自然な言い方です。",
+        "Where is the restroom?": "Where + be動詞 + 場所・物? で場所をたずねます。主語 the restroom の前に is を置きます。",
+        "I missed my train.": "missed は miss の過去形です。すでに乗り遅れた出来事なので過去形にします。",
+        "Which platform is it?": "Which + 名詞 + be動詞 + 主語? で「どの〜ですか」。it は探している電車・便を指します。",
+        "Is this seat taken?": "be + 過去分詞の taken は「取られている・使用中」の状態を表します。",
+        "What time do we arrive?": "What time + do + 主語 + 動詞の原形? で到着時刻を聞きます。arrive は原形です。",
+        "I'm lost.": "I’m + 形容詞で状態を表します。lost はここでは「道に迷っている」です。",
+        "Is it within walking distance?": "within + 名詞で「〜の範囲内」。walking distance は「歩いて行ける距離」という名詞のまとまりです。",
+        "One ticket to London, please.": "注文では「数 + 名詞 + to + 行き先」で十分通じます。文の主語・動詞を省いた定型の注文表現です。",
+        "Is breakfast included?": "be動詞 + 過去分詞の included で「含まれていますか」。料金に含まれるサービスを聞く形です。",
+        "What time is check-out?": "What time + be動詞 + 名詞? で時刻を聞きます。check-out はこの文では名詞です。",
+        "Can we talk for a minute?": "Can + 主語 + 動詞の原形で「〜できますか」。for a minute は厳密な1分ではなく「少し」の意味です。",
+        "Do you have a moment?": "Do + 主語 + 動詞の原形で「〜ありますか」。have a moment は「少し時間がある」のまとまりです。",
+        "That sounds good.": "That + sounds + 形容詞で「それは〜そうだ」。sounds の後ろには good のような形容詞を置きます。",
+        "I agree.": "agree は一般動詞です。I agree のように be動詞を入れずに使います。",
+        "I'm not sure.": "I’m + not + 形容詞で「確信がない」。sure は形容詞です。",
+        "Let's take a break.": "Let’s + 動詞の原形で、相手を含めた「〜しよう」という提案です。",
+        "Thank you for your help.": "Thank you for + 名詞で「〜をありがとう」。for の後ろには help のような名詞を置きます。",
+        "I appreciate it.": "appreciate は「感謝する」という一般動詞です。it は相手の助けや配慮を指します。",
+        "Sorry to keep you waiting.": "keep + 人 + 動詞ing で「人を〜し続けさせる」。to keep は sorry の理由を補っています。",
+        "What time works for you?": "What time + works for + 人? で「どの時間が都合に合いますか」。time が単数なので works です。",
+        "Can you give me a hand?": "give + 人 + 物で「人に物を与える」。a hand はここでは「手助け」という慣用的な意味です。",
+        "That's a good idea.": "That’s は That is の短縮形。a + 形容詞 + 名詞の順で a good idea になります。",
+        "Let me know.": "Let + 人 + 動詞の原形で「人に〜させて」。know はここでは「知らせる」の意味です。",
+        "I'll think about it.": "think about + 名詞で「〜について考える」。it は提案や依頼の内容を指します。",
+        "I'm tired.": "I’m + 形容詞で状態を表します。tired は「疲れた」という形容詞です。",
+        "I'm hungry.": "I’m + 形容詞で状態を表します。hungry は「空腹の」という形容詞です。",
+        "I'm thirsty.": "I’m + 形容詞で状態を表します。thirsty は「のどが渇いた」という形容詞です。",
+        "I have a headache.": "have + a + 症状で「〜がある」。headache は数えられる名詞なので a を付けます。",
+        "I need some rest.": "need + 名詞で「〜が必要」。rest はここでは数えない名詞なので some を使います。",
+        "I'm looking forward to it.": "look forward to + 名詞／動詞ing で「〜を楽しみにする」。この to は前置詞なので、後ろは動詞の原形にしません。",
+        "I had a great time.": "had は have の過去形です。have a great time で「楽しい時間を過ごす」というまとまりです。",
+        "It was nice talking to you.": "It was nice + 動詞ing で「〜できてよかった」。talking は動名詞で、会話したことを表します。",
+        "I'm sorry to hear that.": "I’m sorry to + 動詞の原形で「〜して残念です」。to hear that が残念に思う理由を表します。",
+        "Congratulations!": "Congratulations はこの形で「おめでとう」。通常は複数形の s を付けた形を使います。",
+        "Good luck!": "Good luck はまとまりで「幸運を祈る・がんばって」。luck を lucky に変えません。",
+        "I'm glad to hear that.": "I’m glad to + 動詞の原形で「〜してうれしい」。to hear that がうれしい理由です。",
+        "That makes sense.": "make sense で「筋が通る・納得できる」。主語 That が単数なので makes になります。",
+        "Really?": "Really? は一語で使う短い質問です。be動詞や do を足す必要はありません。",
+        "Are you okay?": "be動詞の疑問文は Are + 主語 + 形容詞?。okay は「大丈夫な」という形容詞です。",
+        "I don't feel well.": "feel + 副詞 well で「気分・体調がよい」。否定は don’t feel well です。",
+        "Please be careful.": "Please + 動詞の原形で、丁寧な依頼になります。be の後ろに形容詞 careful を置きます。",
+        "It doesn't matter.": "It + doesn’t + 動詞の原形で「それは重要ではない」。doesn’t の後ろは matter と原形にします。",
+        "That's okay.": "That’s は That is の短縮形。okay は「大丈夫な・問題ない」という形容詞です。",
+        "I'm kidding.": "I’m + 動詞ing で「今〜している」。kidding は「冗談を言っている」です。"
+      };
+      if (exact[answer]) return exact[answer];
+      if (answer.startsWith("Could you ")) return "Could + you + 動詞の原形で、相手に丁寧に依頼します。Could の後ろは to を入れず、動詞をそのまま置きます。";
+      if (answer.startsWith("Could I ")) return "Could I + 動詞の原形で、丁寧に許可や希望をたずねます。Could の後ろは動詞の原形です。";
+      if (answer.startsWith("Could we ")) return "Could we + 動詞の原形で「私たちは〜できますか」。Could の後ろは動詞の原形です。";
+      if (answer.startsWith("Can I ")) return "Can I + 動詞の原形で「〜してもよいですか／〜できますか」。Can の後ろは動詞の原形です。";
+      if (answer.startsWith("Do you have ")) return "Do + 主語 + have ...? で「〜がありますか」。Do の後ろの have は動詞の原形です。";
+      if (answer.startsWith("I'd like ")) return "I’d like + 名詞、または I’d like to + 動詞の原形で、丁寧に希望を伝えます。";
+      if (answer.startsWith("I'll ")) return "I’ll は I will の短縮形です。未来の行動を伝えるとき、後ろに動詞の原形を置きます。";
+      if (answer.startsWith("Where can ")) return "Where can + 主語 + 動詞の原形? で「どこで〜できますか」。can の後ろは動詞の原形です。";
+      if (answer.startsWith("How long does ")) return "How long + does + 主語 + 動詞の原形? で、必要な時間をたずねます。does の後ろは動詞の原形です。";
+      return "正解文は、主語・動詞・必要な語を自然な順番で並べた日常英語です。語順も含めて一まとまりで覚えましょう。";
     }
 
     const bank = [
-      make("初対面の人に「はじめまして」と言うとき。", "Nice to meet you.", "ナイス・トゥ・ミート・ユー", "はじめまして。お会いできてうれしいです。", "Nice（ナイス：良い） / to（トゥ：〜するために） / meet（ミート：会う） / you（ユー：あなた）", "初対面のあいさつです。別れ際には使いません。"),
+      make("初対面の人に「はじめまして」と言うとき。", "Nice to meet you.", "ナイス・トゥ・ミート・ユー", "はじめまして。お会いできてうれしいです。", "Nice（ナイス：うれしい・よい） / to（トゥ：〜して） / meet（ミート：会う） / you（ユー：あなた）", "初対面のあいさつです。直訳は「あなたに会えてうれしい」です。別れ際には使いません。"),
       make("久しぶりに会った友人に「元気だった？」と聞くとき。", "How have you been?", "ハウ・ハヴ・ユー・ビーン", "これまでどうしていましたか。元気だった？", "How（ハウ：どのように） / have（ハヴ：持っている・ここでは現在完了を作る） / you（ユー：あなた） / been（ビーン：いる・過ごしてきた）", "しばらく会っていなかった相手に使う、自然な近況確認です。"),
       make("相手から「How are you?」と聞かれ、「元気です、ありがとう」と答えるとき。", "I'm good, thanks.", "アイム・グッド・サンクス", "元気です、ありがとう。", "I'm（アイム：I am＝私は〜です） / good（グッド：元気・良い） / thanks（サンクス：ありがとう）", "短く自然な返答です。丁寧にしたい場合は Thank you. でも構いません。"),
       make("近いうちにまた会う相手へ「またあとで」と言うとき。", "See you later.", "シー・ユー・レイター", "またあとで会いましょう。", "See（シー：会う・見る） / you（ユー：あなた） / later（レイター：あとで）", "同じ日の少し後に会う予定があるときにも使えます。"),
@@ -313,14 +394,14 @@
       make("相手に謝られ、「気にしないで」と返すとき。", "No problem.", "ノー・プロブレム", "問題ありません。気にしないで。", "No（ノー：ない） / problem（プロブレム：問題）", "軽い謝罪や依頼に対する、カジュアルで使いやすい返答です。"),
       make("知らない人に声をかける前の「すみません」。", "Excuse me.", "エクスキューズ・ミー", "すみません。失礼します。", "Excuse（エクスキューズ：許す・失礼を許す） / me（ミー：私を）", "道を尋ねる、前を通る、注意を引くときに使います。謝罪そのものには Sorry が合います。"),
       make("困っていて、相手に「手伝ってもらえますか」と頼むとき。", "Could you help me?", "クッド・ユー・ヘルプ・ミー", "手伝っていただけますか。", "Could（クッド：〜していただけますか） / you（ユー：あなた） / help（ヘルプ：助ける） / me（ミー：私を）", "Can you help me? より、少し丁寧でやわらかい頼み方です。"),
-      make("相手の説明が分からず、「分かりません」と言うとき。", "I don't understand.", "アイ・ドント・アンダースタンド", "私は理解できません。", "I（アイ：私） / don't（ドント：do not＝〜しない） / understand（アンダースタンド：理解する）", "聞き取れなかった・意味が分からなかった、どちらにも使えます。"),
+      make("相手の説明が分からず、「分かりません」と言うとき。", "I don't understand.", "アイ・ドント・アンダースタンド", "分かりません。理解できません。", "I（アイ：私） / don't（ドント：do not＝〜しない） / understand（アンダースタンド：理解する）", "聞き取れなかった・意味が分からなかった、どちらにも使えます。きつくならないよう、続けて Could you say that again? と頼むと自然です。"),
       make("聞き取れなかったので「もう一度言ってもらえますか」と頼むとき。", "Could you say that again?", "クッド・ユー・セイ・ザット・アゲイン", "それをもう一度言っていただけますか。", "Could（クッド：〜していただけますか） / you（ユー：あなた） / say（セイ：言う） / that（ザット：それ） / again（アゲイン：もう一度）", "聞き返すときの定番表現です。that は相手が今言った内容を指します。"),
       make("相手の英語が速く、「もう少しゆっくり話してください」と言うとき。", "Please speak more slowly.", "プリーズ・スピーク・モア・スローリー", "もう少しゆっくり話してください。", "Please（プリーズ：お願いします） / speak（スピーク：話す） / more（モア：もっと） / slowly（スローリー：ゆっくり）", "more slowly で「よりゆっくり」です。会話の速度を下げてほしいときに使います。"),
       make("知らない表現を聞いて、「それはどういう意味ですか」と聞くとき。", "What does that mean?", "ワット・ダズ・ザット・ミーン", "それは何を意味しますか。", "What（ワット：何） / does（ダズ：do の形） / that（ザット：それ） / mean（ミーン：意味する）", "単語・文章・相手の発言の意味を確認するときに便利です。"),
       make("名前などを聞いて、「それはどうつづりますか」と聞くとき。", "How do you spell that?", "ハウ・ドゥ・ユー・スペル・ザット", "それはどうつづりますか。", "How（ハウ：どのように） / do（ドゥ：する） / you（ユー：あなた） / spell（スペル：つづる） / that（ザット：それ）", "名前、地名、メールアドレスなどのつづり確認に使えます。"),
       make("すぐ答えずに「少し考えさせて」と言うとき。", "Let me think.", "レット・ミー・シンク", "少し考えさせて。", "Let（レット：〜させる） / me（ミー：私を） / think（シンク：考える）", "会話の間を自然につなげる短い表現です。"),
       make("向かっている最中に「今そちらへ向かっています」と伝えるとき。", "I'm on my way.", "アイム・オン・マイ・ウェイ", "私は向かっている途中です。", "I'm（アイム：私は〜です） / on（オン：〜の上・ここでは途中で） / my（マイ：私の） / way（ウェイ：道）", "待ち合わせ相手への連絡で非常によく使います。"),
-      make("遅れそうで「少し遅れています」と伝えるとき。", "I'm running late.", "アイム・ランニング・レイト", "私は遅れています。", "I'm（アイム：私は〜です） / running（ランニング：進行している・ここでは時間が遅れている） / late（レイト：遅れて）", "Sorry I'm late. は到着後、I'm running late. は到着前の連絡に向きます。"),
+      make("遅れそうで「少し遅れています」と伝えるとき。", "I'm running late.", "アイム・ランニング・レイト", "少し遅れています。遅れそうです。", "I'm（アイム：I am＝私は〜です） / running late（ランニング・レイト：予定より遅れている）", "Sorry I'm late. は到着後、I'm running late. は到着前の連絡に向きます。到着予定を伝えるなら I’ll be there in ten minutes. と続けます。"),
       make("待ち合わせ場所の近くで「もうすぐ着きます」と伝えるとき。", "I'm almost there.", "アイム・オールモスト・ゼア", "もうすぐそこに着きます。", "I'm（アイム：私は〜です） / almost（オールモスト：ほとんど） / there（ゼア：そこに）", "場所まであと少しのときに使う、短く自然な連絡です。"),
       make("別れ際に「気をつけてね」と言うとき。", "Take care.", "テイク・ケア", "気をつけて。元気でね。", "Take（テイク：取る） / care（ケア：注意・世話）", "相手の健康や安全を気づかう、やさしい別れの表現です。"),
       make("翌日に会う予定の相手へ「また明日」と言うとき。", "See you tomorrow.", "シー・ユー・トゥモロー", "また明日会いましょう。", "See（シー：会う） / you（ユー：あなた） / tomorrow（トゥモロー：明日）", "明日また会うことが分かっている相手に使います。"),
@@ -328,10 +409,10 @@
       make("レストランで「メニューをいただけますか」と頼むとき。", "Can I have the menu?", "キャン・アイ・ハヴ・ザ・メニュー", "メニューをいただけますか。", "Can（キャン：〜できますか） / I（アイ：私） / have（ハヴ：もらう） / the（ザ：その） / menu（メニュー：メニュー）", "注文や受け取りでは Can I have ...? が「〜をください」の意味でよく使われます。"),
       make("店員に「おすすめは何ですか」と聞くとき。", "What do you recommend?", "ワット・ドゥ・ユー・レコメンド", "あなたは何をおすすめしますか。", "What（ワット：何） / do（ドゥ：する） / you（ユー：あなた） / recommend（レコメンド：おすすめする）", "メニュー、観光地、商品など、幅広く使える質問です。"),
       make("メニューを指して「これにします」と注文するとき。", "I'll have this.", "アイル・ハヴ・ディス", "これをください。これにします。", "I'll（アイル：I will＝私は〜にします） / have（ハヴ：もらう・注文する） / this（ディス：これ）", "指差しと一緒に使うと、注文したい物を簡単に伝えられます。"),
-      make("食事後に「お会計をお願いします」と頼むとき。", "Could we get the bill, please?", "クッド・ウィー・ゲット・ザ・ビル・プリーズ", "お会計をいただけますか。", "Could（クッド：〜していただけますか） / we（ウィー：私たち） / get（ゲット：受け取る） / the（ザ：その） / bill（ビル：勘定書） / please（プリーズ：お願いします）", "bill は主に米語で会計・勘定書です。英国系の場では check も使われます。"),
+      make("食事後に「お会計をお願いします」と頼むとき。", "Could we get the bill, please?", "クッド・ウィー・ゲット・ザ・ビル・プリーズ", "お会計をお願いします。", "Could（クッド：〜していただけますか） / we（ウィー：私たち） / get（ゲット：受け取る） / the（ザ：その） / bill（ビル：勘定・会計） / please（プリーズ：お願いします）", "bill は英国でも米国でも使えます。米国では check も「飲食店の会計」の意味でよく使われます。"),
       make("料理が辛いかどうかを確認するとき。", "Is this spicy?", "イズ・ディス・スパイシー", "これは辛いですか。", "Is（イズ：〜ですか） / this（ディス：これ） / spicy（スパイシー：辛い）", "辛さが苦手な場合は、注文前に確認するときに便利です。"),
       make("店で「ベジタリアン向けのものはありますか」と聞くとき。", "Do you have anything vegetarian?", "ドゥ・ユー・ハヴ・エニシング・ベジタリアン", "ベジタリアン向けのものはありますか。", "Do（ドゥ：〜しますか） / you（ユー：あなた） / have（ハヴ：ある） / anything（エニシング：何か） / vegetarian（ベジタリアン：菜食の）", "anything vegetarian で「菜食向けの何か」という意味になります。"),
-      make("店で食べ残しを持ち帰りたいとき。", "Can I get this to go?", "キャン・アイ・ゲット・ディス・トゥ・ゴー", "これを持ち帰りにできますか。", "Can（キャン：〜できますか） / I（アイ：私） / get（ゲット：もらう） / this（ディス：これ） / to（トゥ：〜するために） / go（ゴー：行く）", "to go は「持ち帰り用に」という意味です。米国でよく使われます。"),
+      make("店で食べ残しを持ち帰りたいとき。", "Can I get this to go?", "キャン・アイ・ゲット・ディス・トゥ・ゴー", "これを持ち帰りにできますか。", "Can（キャン：〜できますか） / I（アイ：私） / get（ゲット：もらう） / this（ディス：これ） / to go（トゥ・ゴー：持ち帰り用に）", "to go はまとまりで「持ち帰り用に」。米国で特によく使われ、英国では takeaway と言うこともあります。"),
       make("料理を食べて「おいしいです」と伝えるとき。", "It's delicious.", "イッツ・デリシャス", "とてもおいしいです。", "It's（イッツ：It is＝それは〜です） / delicious（デリシャス：おいしい）", "店員や料理を作った人に、率直な褒め言葉として使えます。"),
       make("食べ終わって「お腹いっぱいです」と言うとき。", "I'm full.", "アイム・フル", "私は満腹です。", "I'm（アイム：私は〜です） / full（フル：満杯・満腹の）", "これ以上食べられないほど満腹、という意味です。"),
       make("店で値段を聞くとき。", "How much is this?", "ハウ・マッチ・イズ・ディス", "これはいくらですか。", "How（ハウ：どのくらい） / much（マッチ：量・値段） / is（イズ：〜です） / this（ディス：これ）", "商品を指して値段を尋ねる、基本的な買い物表現です。"),
@@ -339,20 +420,20 @@
       make("店員に「これの、もう少し大きいサイズはありますか」と聞くとき。", "Do you have this in a larger size?", "ドゥ・ユー・ハヴ・ディス・イン・ア・ラージャー・サイズ", "これの、より大きいサイズはありますか。", "Do（ドゥ：〜しますか） / you（ユー：あなた） / have（ハヴ：ある） / this（ディス：これ） / in（イン：〜の状態で） / a（ア：1つの） / larger（ラージャー：より大きい） / size（サイズ：大きさ）", "in a larger size は「より大きいサイズで」という言い方です。"),
       make("店員に声をかけられ、「見ているだけです」と答えるとき。", "I'm just looking.", "アイム・ジャスト・ルッキング", "見ているだけです。", "I'm（アイム：私は〜です） / just（ジャスト：ただ） / looking（ルッキング：見ている）", "買うと決めていないとき、店員へのやわらかい返答として使えます。"),
       make("支払い前に「カードで払えますか」と聞くとき。", "Can I pay by card?", "キャン・アイ・ペイ・バイ・カード", "カードで支払えますか。", "Can（キャン：〜できますか） / I（アイ：私） / pay（ペイ：支払う） / by（バイ：〜で） / card（カード：カード）", "by card で「カードで」という支払い方法を表します。"),
-      make("購入後に「レシートをもらえますか」と頼むとき。", "Could I have a receipt?", "クッド・アイ・ハヴ・ア・レシート", "レシートをいただけますか。", "Could（クッド：〜いただけますか） / I（アイ：私） / have（ハヴ：もらう） / a（ア：1つの） / receipt（レシート：領収書・レシート）", "receipt は支払いの証明書です。経費精算などでも必要になる表現です。"),
+      make("購入後に「レシートをもらえますか」と頼むとき。", "Could I have a receipt?", "クッド・アイ・ハヴ・ア・レシート", "レシートをいただけますか。", "Could（クッド：〜いただけますか） / I（アイ：私） / have（ハヴ：もらう） / a（ア：1枚の） / receipt（レシート：購入・支払いの証明）", "receipt は店でもらうレシートです。経費精算などで必要なときにも使えます。"),
       make("施設内でトイレの場所を聞くとき。", "Where is the restroom?", "ウェア・イズ・ザ・レストルーム", "トイレはどこですか。", "Where（ウェア：どこ） / is（イズ：ある） / the（ザ：その） / restroom（レストルーム：トイレ）", "restroom は米国でよく使う、丁寧で無難な言い方です。"),
-      make("近くにコンビニがあるか聞くとき。", "Is there a convenience store nearby?", "イズ・ゼア・ア・コンビニエンス・ストア・ニアバイ", "近くにコンビニエンスストアはありますか。", "Is（イズ：ありますか） / there（ゼア：そこに） / a（ア：1つの） / convenience store（コンビニエンス・ストア：コンビニ） / nearby（ニアバイ：近くに）", "Is there ...? は、ある場所に何かが存在するかを聞く基本形です。"),
+      make("近くにコンビニのような店があるか聞くとき。", "Is there a convenience store nearby?", "イズ・ゼア・ア・コンビニエンス・ストア・ニアバイ", "近くにコンビニエンスストアはありますか。", "Is there（イズ・ゼア：〜はありますか） / a（ア：1軒の） / convenience store（コンビニエンス・ストア：日用品や軽食を売る小型店） / nearby（ニアバイ：近くに）", "海外の convenience store は日本のコンビニと品ぞろえ・サービスが異なることがあります。Is there ...? は、近くに何かがあるかを聞く基本形です。"),
       make("旅行先で「私たちの写真を撮っていただけますか」と頼むとき。", "Could you take a picture of us?", "クッド・ユー・テイク・ア・ピクチャー・オブ・アス", "私たちの写真を撮っていただけますか。", "Could（クッド：〜していただけますか） / you（ユー：あなた） / take（テイク：撮る） / a（ア：1枚の） / picture（ピクチャー：写真） / of（オブ：〜の） / us（アス：私たちを）", "of us で「私たちの」を表します。スマホを渡すときにも使えます。"),
       make("店やホテルでWi-Fiがあるか聞くとき。", "Do you have Wi-Fi?", "ドゥ・ユー・ハヴ・ワイファイ", "Wi-Fiはありますか。", "Do（ドゥ：〜しますか） / you（ユー：あなた） / have（ハヴ：ある） / Wi-Fi（ワイファイ：無線通信）", "Do you have ...? は、店や施設に設備・サービスがあるか尋ねるときに使えます。"),
       make("駅の場所を尋ねるとき。", "Where is the station?", "ウェア・イズ・ザ・ステーション", "駅はどこですか。", "Where（ウェア：どこ） / is（イズ：ある） / the（ザ：その） / station（ステーション：駅）", "目的地の単語を入れ替えるだけで、さまざまな場所を聞けます。"),
-      make("移動時間を聞くとき。", "How long does it take?", "ハウ・ロング・ダズ・イット・テイク", "どのくらい時間がかかりますか。", "How（ハウ：どのくらい） / long（ロング：長く） / does（ダズ：do の形） / it（イット：それ） / take（テイク：かかる）", "it は移動や作業を指します。目的地を続けて How long does it take to the station? とも言えます。"),
+      make("移動時間を聞くとき。", "How long does it take?", "ハウ・ロング・ダズ・イット・テイク", "どのくらい時間がかかりますか。", "How long（ハウ・ロング：どのくらいの時間） / does（ダズ：do の形） / it（イット：それ） / take（テイク：かかる）", "it は移動や作業を指します。目的地まで聞くなら How long does it take to get to the station? のように to get to を続けます。"),
       make("ホテル到着時に「チェックインしたいです」と伝えるとき。", "I'd like to check in.", "アイド・ライク・トゥ・チェック・イン", "チェックインをしたいです。", "I'd（アイド：I would＝私は〜したい） / like（ライク：したい） / to（トゥ：〜すること） / check in（チェック・イン：到着手続きをする）", "ホテルや空港などで使う、丁寧な意思表示です。"),
       make("ホテルで予約していることを伝えるとき。", "I have a reservation.", "アイ・ハヴ・ア・リザベーション", "予約があります。", "I（アイ：私） / have（ハヴ：持っている） / a（ア：1つの） / reservation（リザベーション：予約）", "名前を続けて I have a reservation under Ikemoto. のようにも言えます。"),
       make("ホテルで「朝食は何時ですか」と聞くとき。", "What time is breakfast?", "ワット・タイム・イズ・ブレックファスト", "朝食は何時ですか。", "What（ワット：何） / time（タイム：時刻） / is（イズ：〜です） / breakfast（ブレックファスト：朝食）", "開始と終了の両方を聞きたいなら What time is breakfast served? とも言えます。"),
       make("ホテルで「タクシーを呼んでいただけますか」と頼むとき。", "Could you call a taxi?", "クッド・ユー・コール・ア・タクシー", "タクシーを呼んでいただけますか。", "Could（クッド：〜していただけますか） / you（ユー：あなた） / call（コール：呼ぶ） / a（ア：1台の） / taxi（タクシー：タクシー）", "call a taxi は「電話をする」ではなく「タクシーを手配する」という意味です。"),
       make("電車に乗り遅れて「電車を逃しました」と言うとき。", "I missed my train.", "アイ・ミスト・マイ・トレイン", "私は電車に乗り遅れました。", "I（アイ：私） / missed（ミスト：逃した） / my（マイ：私の） / train（トレイン：電車）", "missed は miss の過去形です。予定や乗り物に間に合わなかったことを表します。"),
       make("駅で「何番ホームですか」と聞くとき。", "Which platform is it?", "ウィッチ・プラットフォーム・イズ・イット", "どのホームですか。", "Which（ウィッチ：どの） / platform（プラットフォーム：ホーム） / is（イズ：〜です） / it（イット：それ）", "platform は電車に乗るホームを指します。案内板を見ながら使えます。"),
-      make("空席に「この席は空いていますか」と確認するとき。", "Is this seat taken?", "イズ・ディス・シート・テイケン", "この席は取られていますか。", "Is（イズ：〜ですか） / this（ディス：この） / seat（シート：席） / taken（テイケン：取られている）", "taken は「すでに誰かが使っている」という意味です。"),
+      make("空席に「この席は空いていますか」と確認するとき。", "Is this seat taken?", "イズ・ディス・シート・テイケン", "この席は誰かが使っていますか。空いていますか。", "Is（イズ：〜ですか） / this（ディス：この） / seat（シート：席） / taken（テイケン：使用中の・取られている）", "taken は「すでに誰かが使っている」という意味です。No と返ってきたら、その席は空いています。"),
       make("飛行機や電車の予約で「窓側の席がほしいです」と頼むとき。", "I'd like a window seat.", "アイド・ライク・ア・ウィンドウ・シート", "窓側の席がほしいです。", "I'd（アイド：私は〜したい） / like（ライク：欲しい） / a（ア：1つの） / window（ウィンドウ：窓） / seat（シート：席）", "window seat は窓側、aisle seat は通路側の席です。"),
       make("ホテルで「荷物をここに預けられますか」と聞くとき。", "Can I leave my luggage here?", "キャン・アイ・リーヴ・マイ・ラゲージ・ヒア", "荷物をここに置いておけますか。", "Can（キャン：〜できますか） / I（アイ：私） / leave（リーヴ：置いていく） / my（マイ：私の） / luggage（ラゲージ：荷物） / here（ヒア：ここに）", "check-in 前や check-out 後に荷物を預けたい場面で使えます。"),
       make("乗り物で目的地への到着時刻を聞くとき。", "What time do we arrive?", "ワット・タイム・ドゥ・ウィー・アライブ", "私たちは何時に到着しますか。", "What（ワット：何） / time（タイム：時刻） / do（ドゥ：する） / we（ウィー：私たち） / arrive（アライブ：到着する）", "arrive は目的地に「到着する」という動詞です。"),
@@ -368,13 +449,13 @@
       make("忙しそうな相手に「少しお時間ありますか」と聞くとき。", "Do you have a moment?", "ドゥ・ユー・ハヴ・ア・モーメント", "少しお時間ありますか。", "Do（ドゥ：〜しますか） / you（ユー：あなた） / have（ハヴ：ある） / a（ア：少しの） / moment（モーメント：瞬間・少しの時間）", "a moment は短い時間です。会話を始める前の丁寧な確認に使えます。"),
       make("すぐ答えられず「確認して、また連絡します」と伝えるとき。", "I'll check and get back to you.", "アイル・チェック・アンド・ゲット・バック・トゥ・ユー", "確認して、あなたにまた連絡します。", "I'll（アイル：I will＝私は〜します） / check（チェック：確認する） / and（アンド：そして） / get back（ゲット・バック：返事をする） / to（トゥ：〜へ） / you（ユー：あなた）", "get back to you は、後で返事・連絡をするという定番の仕事表現です。"),
       make("相手の提案に「それは良さそうですね」と返すとき。", "That sounds good.", "ザット・サウンズ・グッド", "それはよさそうです。", "That（ザット：それ） / sounds（サウンズ：聞こえる・思われる） / good（グッド：よい）", "提案内容を聞いて、前向きに賛成するときの自然な返答です。"),
-      make("相手の意見に「同意します」と伝えるとき。", "I agree.", "アイ・アグリー", "私は同意します。", "I（アイ：私） / agree（アグリー：同意する）", "強すぎない、分かりやすい賛成の表現です。"),
+      make("相手の意見に「同意します」と伝えるとき。", "I agree.", "アイ・アグリー", "同意します。そう思います。", "I（アイ：私） / agree（アグリー：同意する）", "相手の意見に明確に賛成するときの表現です。少し控えめに言うなら I think so, too. も使えます。"),
       make("まだ判断できず「よく分かりません」と言うとき。", "I'm not sure.", "アイム・ノット・シュア", "私は確信がありません。", "I'm（アイム：私は〜です） / not（ノット：〜でない） / sure（シュア：確信している）", "I don't know. よりも、やわらかく「まだ確かではない」と伝えられます。"),
       make("説明を受けて「説明していただけますか」と頼むとき。", "Could you explain that?", "クッド・ユー・エクスプレイン・ザット", "それを説明していただけますか。", "Could（クッド：〜していただけますか） / you（ユー：あなた） / explain（エクスプレイン：説明する） / that（ザット：それ）", "その内容をもう少し詳しく知りたいときに使います。"),
       make("会議や作業中に「休憩しましょう」と提案するとき。", "Let's take a break.", "レッツ・テイク・ア・ブレイク", "休憩しましょう。", "Let's（レッツ：Let us＝私たちは〜しよう） / take（テイク：取る） / a（ア：1つの） / break（ブレイク：休憩）", "Let's は相手を含めて「〜しよう」と提案する表現です。"),
       make("後でメールを送ることを伝えるとき。", "I'll send you an email.", "アイル・センド・ユー・アン・イーメール", "あなたにメールを送ります。", "I'll（アイル：私は〜します） / send（センド：送る） / you（ユー：あなたに） / an（アン：1通の） / email（イーメール：電子メール）", "you はここでは「あなたに」という受け手を表します。"),
       make("助けてもらった相手に「手伝ってくれてありがとう」と言うとき。", "Thank you for your help.", "サンキュー・フォー・ユア・ヘルプ", "あなたの助けに感謝します。", "Thank（サンク：感謝する） / you（ユー：あなた） / for（フォー：〜に対して） / your（ユア：あなたの） / help（ヘルプ：助け）", "Thank you の後に for ... を続けると、何に感謝しているかを伝えられます。"),
-      make("相手の配慮に対して「本当に感謝しています」と言うとき。", "I appreciate it.", "アイ・アプリシエイト・イット", "私はそれに感謝しています。", "I（アイ：私） / appreciate（アプリシエイト：感謝する・価値を認める） / it（イット：それ）", "Thank you より少し丁寧に、相手の行為への感謝を示せます。"),
+      make("相手の配慮に対して「感謝しています」と言うとき。", "I appreciate it.", "アイ・アプリシエイト・イット", "感謝しています。助かります。", "I（アイ：私） / appreciate（アプリシエイト：感謝する） / it（イット：それ）", "Thank you に近い感謝表現です。相手の手間・助け・配慮に特に感謝したいときに使います。"),
       make("待っていた相手に「お待たせしてすみません」と言うとき。", "Sorry to keep you waiting.", "ソーリー・トゥ・キープ・ユー・ウェイティング", "お待たせしてすみません。", "Sorry（ソーリー：ごめんなさい） / to（トゥ：〜して） / keep（キープ：〜の状態にしておく） / you（ユー：あなたを） / waiting（ウェイティング：待っている）", "keep you waiting で「あなたを待たせ続ける」という意味です。"),
       make("予定を変えたく「日程を変更できますか」と頼むとき。", "Could we reschedule?", "クッド・ウィー・リスケジュール", "日程を変更できますか。", "Could（クッド：〜できますか） / we（ウィー：私たち） / reschedule（リスケジュール：予定を組み直す）", "reschedule は、予定を別の日・別の時刻へ変更する動詞です。"),
       make("日程調整で「何時なら都合がよいですか」と聞くとき。", "What time works for you?", "ワット・タイム・ワークス・フォー・ユー", "何時があなたに都合よいですか。", "What（ワット：何） / time（タイム：時刻） / works（ワークス：都合が合う） / for（フォー：〜にとって） / you（ユー：あなた）", "works は「仕事をする」以外に「都合が合う」という意味でも使えます。"),
@@ -401,9 +482,9 @@
       make("体調や様子が気になる人に「大丈夫ですか」と聞くとき。", "Are you okay?", "アー・ユー・オーケー", "あなたは大丈夫ですか。", "Are（アー：〜ですか） / you（ユー：あなた） / okay（オーケー：大丈夫）", "転んだ人や元気のない人などに、相手を気づかうときに使います。"),
       make("体調が悪く「具合がよくありません」と伝えるとき。", "I don't feel well.", "アイ・ドント・フィール・ウェル", "私は体調がよくありません。", "I（アイ：私） / don't（ドント：〜しない） / feel（フィール：感じる） / well（ウェル：よく）", "I feel sick. より広く、はっきり病名を言わずに不調を伝えられます。"),
       make("相手へ「気をつけてください」と注意を促すとき。", "Please be careful.", "プリーズ・ビー・ケアフル", "気をつけてください。", "Please（プリーズ：お願いします） / be（ビー：〜である） / careful（ケアフル：注意深い）", "危ない場所・悪天候・帰り道などで、相手を気づかう表現です。"),
-      make("小さな問題に対し「気にしなくていいよ」と言うとき。", "It doesn't matter.", "イット・ダズント・マター", "それは重要ではありません。気にしません。", "It（イット：それ） / doesn't（ダズント：does not＝〜しない） / matter（マター：重要である）", "軽い失敗や違いについて「大したことではない」と伝えるときに使います。"),
+      make("小さな問題に対し「それは重要ではない」と言うとき。", "It doesn't matter.", "イット・ダズント・マター", "それは重要ではありません。大したことではありません。", "It（イット：それ） / doesn't（ダズント：does not＝〜しない） / matter（マター：重要である）", "軽い違いや重要でない点を指す表現です。相手の謝罪をやさしく受け止めるなら That’s okay. や No problem. のほうが自然です。"),
       make("相手の謝罪に「大丈夫ですよ」とやさしく返すとき。", "That's okay.", "ザッツ・オーケー", "それで大丈夫です。", "That's（ザッツ：That is＝それは〜です） / okay（オーケー：大丈夫）", "No problem. と近いですが、相手を安心させる柔らかい言い方です。"),
-      make("冗談だと伝えて「冗談です」と言うとき。", "I'm kidding.", "アイム・キディング", "私は冗談を言っています。", "I'm（アイム：私は〜です） / kidding（キディング：冗談を言っている）", "誤解されそうな冗談の直後に添えると、意図を分かりやすくできます。")
+      make("冗談だと伝えて「冗談です」と言うとき。", "I'm kidding.", "アイム・キディング", "冗談です。からかっているだけです。", "I'm（アイム：I am＝私は〜です） / kidding（キディング：冗談を言っている）", "誤解されそうな冗談の直後に添えると、冗談だと伝えられます。くだけた会話では Just kidding. もよく使います。")
     ];
 
     // 誤答はすべて、正解文と同じ場面で迷いやすい近接した文法誤りに限定する。
@@ -571,22 +652,25 @@
       "works": "ワークス", "would": "ウッド", "you": "ユー", "your": "ユア"
     };
 
-    let round = 1;
-    let current = [];
-    let questionPosition = 0;
+    let current = null;
     let locked = false;
     let progress = loadProgress();
 
     function blankRecord() {
-      return { seen: 0, correct: 0, wrong: 0, streak: 0, mastered: false, nextDue: 0, lastAnswered: 0 };
+      return { seen: 0, correct: 0, wrong: 0, completed: false, availableAfter: 0, lastAnswered: 0 };
+    }
+
+    function blankProgress() {
+      return { answered: 0, records: {} };
     }
 
     function loadProgress() {
       try {
-        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
-        return saved && typeof saved === "object" ? saved : {};
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+        if (!saved || typeof saved !== "object" || !saved.records || typeof saved.records !== "object") return blankProgress();
+        return { answered: Number(saved.answered) || 0, records: saved.records };
       } catch (error) {
-        return {};
+        return blankProgress();
       }
     }
 
@@ -599,8 +683,8 @@
     }
 
     function recordFor(index) {
-      if (!progress[index]) progress[index] = blankRecord();
-      return progress[index];
+      if (!progress.records[index]) progress.records[index] = blankRecord();
+      return progress.records[index];
     }
 
     function shuffled(values) {
@@ -610,12 +694,6 @@
         [result[i], result[j]] = [result[j], result[i]];
       }
       return result;
-    }
-
-    function compareReviews(left, right) {
-      const leftPriority = left.record.streak === 0 ? 0 : 1;
-      const rightPriority = right.record.streak === 0 ? 0 : 1;
-      return leftPriority - rightPriority || left.record.nextDue - right.record.nextDue || left.record.lastAnswered - right.record.lastAnswered;
     }
 
     function choicesFor(item) {
@@ -633,29 +711,23 @@
       return words.map(word => pronunciationDictionary[word.toLowerCase()]).join("・");
     }
 
-    function pickTen() {
-      const now = Date.now();
-      const entries = bank.map((item, index) => ({ item, index, record: recordFor(index) }));
-      const due = entries
-        .filter(entry => entry.record.seen && entry.record.nextDue <= now)
-        .sort(compareReviews);
-      const unseen = shuffled(entries.filter(entry => !entry.record.seen));
-      const scheduled = entries
-        .filter(entry => entry.record.seen && entry.record.nextDue > now && !entry.record.mastered)
-        .sort((left, right) => left.record.nextDue - right.record.nextDue);
-      const mastered = entries
-        .filter(entry => entry.record.seen && entry.record.nextDue > now && entry.record.mastered)
-        .sort((left, right) => left.record.nextDue - right.record.nextDue);
+    function pickNextQuestion() {
+      const entries = bank
+        .map((item, index) => ({ item, index, record: recordFor(index) }))
+        .filter(entry => !entry.record.completed);
 
-      const selectedEntries = [];
-      [due, unseen, scheduled, mastered].forEach(group => {
-        group.forEach(entry => {
-          if (selectedEntries.length < 10 && !selectedEntries.some(chosen => chosen.index === entry.index)) {
-            selectedEntries.push({ ...entry, choices: choicesFor(entry.item) });
-          }
-        });
-      });
-      current = selectedEntries;
+      if (!entries.length) return null;
+
+      const dueReviews = entries
+        .filter(entry => entry.record.wrong > 0 && entry.record.availableAfter <= progress.answered)
+        .sort((left, right) => left.record.availableAfter - right.record.availableAfter || left.record.lastAnswered - right.record.lastAnswered);
+      const unseen = shuffled(entries.filter(entry => entry.record.seen === 0));
+      const laterReviews = entries
+        .filter(entry => entry.record.wrong > 0 && entry.record.availableAfter > progress.answered)
+        .sort((left, right) => left.record.availableAfter - right.record.availableAfter);
+
+      const next = dueReviews[0] || unseen[0] || laterReviews[0];
+      return { ...next, choices: choicesFor(next.item) };
     }
 
     function escapeHtml(value) {
@@ -668,17 +740,27 @@
     }
 
     function updateProgress() {
-      const completed = Math.min(questionPosition, 10);
-      document.getElementById("progressText").textContent = `第${Math.min(questionPosition + 1, 10)}問 / 10`;
-      document.getElementById("progressBar").style.width = `${completed * 10}%`;
+      const completed = Object.values(progress.records).filter(record => record.completed).length;
+      document.getElementById("progressText").textContent = `クリア ${completed} / ${bank.length}`;
+      document.getElementById("progressBar").style.width = `${(completed / bank.length) * 100}%`;
     }
 
     function render() {
       const quiz = document.getElementById("quiz");
       quiz.innerHTML = "";
 
-      const entry = current[questionPosition];
-      if (!entry) return;
+      const entry = current;
+      if (!entry) {
+        updateProgress();
+        quiz.innerHTML = `
+          <section class="question">
+            <div class="qnum">ALL CLEAR</div>
+            <h2>全${bank.length}問をクリアしました！</h2>
+            <p>正解した問題は出題対象から外れています。もう一度学習したい場合は、下の「学習記録をリセット」を押してください。</p>
+          </section>
+        `;
+        return;
+      }
       const answers = entry.choices.map((choice, answerIndex) => `
         <button class="answer" type="button" data-a="${answerIndex}">
           <span class="choice-row">
@@ -694,16 +776,17 @@
       const section = document.createElement("section");
       section.className = "question";
       section.innerHTML = `
-        <div class="qnum">QUESTION ${questionPosition + 1}</div>
+        <div class="qnum">QUESTION</div>
         <h2>${escapeHtml(entry.item.scene)}<br>最も自然な英文は？</h2>
         <div class="answers">${answers}</div>
         <div class="explain" id="explain">
           <strong>正解：${escapeHtml(entry.item.answer)}</strong>
           <p><span class="explain-label">読み方：</span>${escapeHtml(entry.item.reading)}</p>
-          <p><span class="explain-label">意味：</span>${escapeHtml(entry.item.meaning)}</p>
-          <p><span class="explain-label">語句：</span>${escapeHtml(entry.item.words)}</p>
+          <p><span class="explain-label">自然な意味：</span>${escapeHtml(entry.item.meaning)}</p>
+          <p><span class="explain-label">語句の意味：</span>${escapeHtml(entry.item.words)}</p>
+          <p><span class="explain-label">文の形：</span>${escapeHtml(entry.item.grammar)}</p>
           <p><span class="explain-label">使い方：</span>${escapeHtml(entry.item.tip)}</p>
-          <p><span class="explain-label">見比べる点：</span>ほかの選択肢は、同じ意味を伝えようとしているものの、語順・助動詞・動詞の形・前置詞・冠詞のいずれかが不自然です。正解文と1語ずつ比べて確認しましょう。</p>
+          <p><span class="explain-label">選ぶポイント：</span>正しい語順だけでなく、その場面で自然に使える意味かを確認しましょう。似た語でも、意味や使い方が異なることがあります。</p>
         </div>
       `;
       quiz.appendChild(section);
@@ -718,17 +801,13 @@
       const record = recordFor(entry.index);
       record.seen++;
       record.lastAnswered = Date.now();
+      progress.answered++;
       if (isCorrect) {
         record.correct++;
-        record.streak++;
-        record.mastered = record.streak >= MASTERY_STREAK;
-        const intervalIndex = Math.min(record.streak - 1, REVIEW_INTERVALS.length - 1);
-        record.nextDue = Date.now() + REVIEW_INTERVALS[intervalIndex];
+        record.completed = true;
       } else {
         record.wrong++;
-        record.streak = 0;
-        record.mastered = false;
-        record.nextDue = Date.now() + 10 * MINUTE;
+        record.availableAfter = progress.answered + REVIEW_GAP;
       }
       saveProgress();
     }
@@ -736,43 +815,24 @@
     function showFeedback(isCorrect) {
       const result = document.getElementById("result");
       const actionBtn = document.getElementById("actionBtn");
-      const isLastQuestion = questionPosition === current.length - 1;
       result.style.display = "block";
       actionBtn.style.display = "inline-flex";
 
       if (!isCorrect) {
-        document.getElementById("resultTitle").textContent = "不正解。第1問からやり直しです";
-        document.getElementById("resultText").textContent = "正解と解説を確認してから、同じ10問にもう一度挑戦しましょう。";
-        actionBtn.textContent = "第1問からやり直す";
-        actionBtn.onclick = restartChallenge;
-      } else if (isLastQuestion) {
-        document.getElementById("resultTitle").textContent = "10問連続正解！クリアです";
-        document.getElementById("resultText").textContent = "すべての答えを正しく選べました。次は別の10問に挑戦できます。";
-        document.getElementById("progressText").textContent = "10問 / 10 クリア";
-        document.getElementById("progressBar").style.width = "100%";
-        actionBtn.textContent = "別の10問に挑戦する";
-        actionBtn.onclick = () => {
-          round++;
-          startNewChallenge();
-        };
+        document.getElementById("resultTitle").textContent = "不正解";
+        document.getElementById("resultText").textContent = `正解と解説を確認してください。この問題は、少なくとも${REVIEW_GAP}問あとに再出題されます。`;
       } else {
-        document.getElementById("resultTitle").textContent = "正解！";
-        document.getElementById("resultText").textContent = `第${questionPosition + 1}問を突破しました。解説を確認して次へ進みましょう。`;
-        actionBtn.textContent = "次の問題へ";
-        actionBtn.onclick = () => {
-          questionPosition++;
-          locked = false;
-          hideFeedback();
-          render();
-          window.scrollTo({ top: 0, behavior: "smooth" });
-        };
+        document.getElementById("resultTitle").textContent = "正解！この問題はクリアです";
+        document.getElementById("resultText").textContent = "次回以降、この問題は出題されません。";
       }
+      actionBtn.textContent = "次の問題へ";
+      actionBtn.onclick = startNextQuestion;
       result.scrollIntoView({ behavior: "smooth", block: "center" });
     }
 
     function answerQuestion(answerIndex) {
       if (locked) return;
-      const entry = current[questionPosition];
+      const entry = current;
       const correctIndex = entry.choices.findIndex(choice => choice.correct);
       const isCorrect = answerIndex === correctIndex;
       locked = true;
@@ -794,18 +854,9 @@
       actionBtn.onclick = null;
     }
 
-    function restartChallenge() {
-      questionPosition = 0;
+    function startNextQuestion() {
       locked = false;
-      hideFeedback();
-      render();
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-
-    function startNewChallenge() {
-      questionPosition = 0;
-      locked = false;
-      pickTen();
+      current = pickNextQuestion();
       hideFeedback();
       render();
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -813,17 +864,16 @@
 
     document.getElementById("resetBtn").addEventListener("click", () => {
       if (!window.confirm("学習記録をすべて消去して、最初から始めますか？")) return;
-      progress = {};
+      progress = blankProgress();
       try {
         localStorage.removeItem(STORAGE_KEY);
       } catch (error) {
         // ブラウザの保存機能が使えない場合も、この画面内では初期状態に戻せます。
       }
-      round = 1;
-      startNewChallenge();
+      startNextQuestion();
     });
 
-    startNewChallenge();
+    startNextQuestion();
   </script>
 </body>
 </html>
